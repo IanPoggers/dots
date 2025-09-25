@@ -81,6 +81,8 @@
 (setq! cfw:render-line-breaker 'cfw:render-line-breaker-wordwrap
        cfw:display-calendar-holidays nil)
 
+;; Define my own calendar function
+;; I have decided to not use this funciton for now, but this could be changed in the future
 (defun my-open-calendar ()
   (interactive)
   (cfw:open-calendar-buffer
@@ -138,11 +140,12 @@
   :after org)
 
 (after! org-modern
-  (setq org-modern-table t)
-  (setq org-modern-table-vertical 2)
-  (setq org-modern-block-fringe 8)
-  (setq org-modern-block-name nil)
-  (setq org-modern-keyword "‣")
+  (setq org-modern-table t
+        org-modern-table-vertical 2
+        org-modern-table-horizontal 2
+        org-modern-block-fringe 8
+        org-modern-block-name nil
+        org-modern-keyword "‣")
   (global-org-modern-mode 1))
 
 ;;;; Timeblock
@@ -190,8 +193,10 @@
 ;; Hide some tags such as ATTATCH
 (after! org-agenda
   (setq org-agenda-hide-tags-regexp (concat org-agenda-hide-tags-regexp "\\|ATTACH")
-        org-agenda-files (append org-agenda-files '("~/org/"))
+        org-agenda-files (append org-agenda-files '("~/org/" "~/org/journal/"))
         org-agenda-follow-indirect nil ;; TODO What's the best value for this to not be confusing
+        org-agenda-skip-scheduled-if-done t
+        org-agenda-skip-deadline-if-done t
         org-agenda-start-with-follow-mode nil))
 
 
