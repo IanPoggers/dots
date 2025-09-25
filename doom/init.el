@@ -100,7 +100,7 @@
        (spell  ; tasing you for misspelling mispelling
         +flyspell
         +hunspell)
-       grammar           ; tasing grammar mistake every you make
+       ;;grammar           ; tasing grammar mistake every you make.. TODO Do I want langtool-mode?)
 
        :tools
        ;;ansible
