@@ -6,6 +6,8 @@
        auto-revert-verbose nil)
 
 (setq! ispell-dictionary "en_US")
+;;;; Bindings
+(map! :g  "<f5>" 'revert-buffer)
 ;;;; PDF
 (setq! pdf-view-resize-factor 1.05
        pdf-view-display-size 'fit-width
@@ -119,6 +121,9 @@
                       :height 1.1)
   (add-hook 'org-mode-hook #'visual-fill-column-mode))
 
+;;;; capture TODO
+;;(after! org
+;;(setq org-capture-templates)
 ;;;; Journal
 (after! org-journal
   (setq
@@ -194,11 +199,10 @@
 (after! org-agenda
   (setq org-agenda-hide-tags-regexp (concat org-agenda-hide-tags-regexp "\\|ATTACH")
         org-agenda-files (append org-agenda-files '("~/org/" "~/org/journal/"))
-        org-agenda-follow-indirect nil ;; TODO What's the best value for this to not be confusing
+        org-agenda-follow-indirect t ;; TODO What's the best value for this to not be confusing
         org-agenda-skip-scheduled-if-done t
         org-agenda-skip-deadline-if-done t
         org-agenda-start-with-follow-mode nil))
-
 
 ;;;; ox-*
 (use-package! ox-typst
@@ -275,4 +279,5 @@
 (setq! evil-snipe-scope 'whole-buffer)
 
 ;;; Evil
+;;;; Modes that evil is disabled
 ;;;; Bindings
