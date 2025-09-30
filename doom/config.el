@@ -1,3 +1,5 @@
+;;; config.el -*- lexical-binding: t; -*-
+
 ;;; General Emacs
 (global-auto-revert-mode 1)
 (smartparens-global-mode 1)
@@ -8,9 +10,14 @@
 (setq! ispell-dictionary "en_US")
 ;;;; Bindings
 (map! :g  "<f5>" 'revert-buffer)
+
+(after! which-key
+  (setq which-key-idle-delay .18))
+
 ;;;; PDF
-(setq! pdf-view-resize-factor 1.05
+(setq! pdf-view-resize-factor 1.1
        pdf-view-display-size 'fit-width
+       ;;pdf-view-use-scaling t
        pdf-view-continuous nil)
 
 (after! pdf-view
@@ -18,6 +25,7 @@
             (lambda ()
               (visual-line-fill-column-mode -1)
               (visual-fill-column-mode -1)
+              (pdf-view-auto-slice-minor-mode 1)
               (add-to-list 'pdf-view-incompatible-modes '(visual-fill-column-mode visual-line-fill-column-mode)))))
 
 ;;;; Doom Stuff
@@ -36,8 +44,8 @@
 ;; - `doom-serif-font' -- for the `fixed-pitch-serif' face
 
 ;;;; Fonts and Themes
-(setq! doom-font (font-spec :family "Iosevka Nerd Font Mono" :size 18))
-(setq! doom-variable-pitch-font (font-spec :family "Atkinson Hyperlegible" :size 20))
+(setq! doom-font (font-spec :family "Iosevka Nerd Font Mono" :size 16))
+(setq! doom-variable-pitch-font (font-spec :family "Atkinson Hyperlegible" :size 17))
 ;;(setq! doom-theme 'catppuccin)
 ;;(setq! catpuccin-flavor 'latte)
 ;;(load-theme 'catppuccin t t)
@@ -107,23 +115,52 @@
        :desc "Calendar" "c" #'+calendar/open-calendar))
 
 ;;; Org
-(setq! org-directory "~/org/")
-(setq! org-roam-directory "~/Sync/Roam/")
+(setq! org-directory "~/org/"
+       org-roam-directory "~/Sync/Roam/"
+       org-archive-location "~/org/archive/%s_archive::")
 
 (after! org
   (setq
-   org-startup-folded 'fold
-   org-timeblock-span 7
-   org-timeblock-show-future-repeats t
+   org-startup-folded t ;; Apparently 'fold does not work for some reason
+   org-hide-drawer-startup t
+   org-cycle-hide-drawer-startup t
+   org-cycle-hide-block-startup t
    org-hide-leading-stars nil)
   (set-face-attribute 'org-quote nil
                       :family "Crimson Pro"
                       :height 1.1)
-  (add-hook 'org-mode-hook #'visual-fill-column-mode))
 
+  (add-hook 'org-mode-hook (lambda ()
+                             (setq
+                              org-startup-folded t
+                              org-hide-drawer-startup t
+                              org-cycle-hide-drawer-startup t
+                              org-cycle-hide-block-startup t
+                              org-hide-leading-stars nil)
+                             (visual-fill-column-mode 1))))
+
+
+;;;; latex preview
+
+(after! org
+  (plist-put org-format-latex-options :scale 0.54))
+
+
+;;;; Timeblock
+(after! org-timeblock
+  (setq
+   org-timeblock-span 7
+   org-timeblock-show-future-repeats t))
+;;;; Pomo
+(after! org-pomodoro
+  (setq
+   org-pomodoro-start-sound-p t))
 ;;;; capture TODO
 ;;(after! org
-;;(setq org-capture-templates)
+(after! org
+  (setq org-capture-templates
+        (append org-capture-templates
+                '(("c" "Templates for classes")))))
 ;;;; Journal
 (after! org-journal
   (setq
@@ -139,20 +176,6 @@
 ;;;; Visual
 (setq! org-hide-leading-stars nil)
 (setq! org-hide-leading-stars-before-indent-mode nil) ;; if you use indent mode
-
-;;;;; Modern
-(use-package! org-modern
-  :after org)
-
-(after! org-modern
-  (setq org-modern-table t
-        org-modern-table-vertical 2
-        org-modern-table-horizontal 2
-        org-modern-block-fringe 8
-        org-modern-block-name nil
-        org-modern-keyword "‣")
-  (global-org-modern-mode 1))
-
 ;;;; Timeblock
 (use-package! org-timeblock)
 (after! org-timeblock
@@ -172,7 +195,7 @@
         org-noter-highlight-selected-text t
         org-noter-use-indirect-buffer t
         org-noter-always-create-frame nil
-        org-noter-closest-tipping-point 0.2
+        org-noter-closest-tipping-point 0.4
         org-noter-doc-split-fraction '(0.6 . 0.4)))
 
 (setq! org-noter-highlight-selected-text t) ; idk if this is needed but idc
@@ -199,23 +222,158 @@
 (after! org-agenda
   (setq org-agenda-hide-tags-regexp (concat org-agenda-hide-tags-regexp "\\|ATTACH")
         org-agenda-files (append org-agenda-files '("~/org/" "~/org/journal/"))
-        org-agenda-follow-indirect t ;; TODO What's the best value for this to not be confusing
+        org-agenda-follow-indirect nil ;; TODO What's the best value for this to not be confusing
         org-agenda-skip-scheduled-if-done t
+        org-agenda-window-setup 'current-window
+        org-agenda-window-frame-fractions '(0.5 . 0.8)
         org-agenda-skip-deadline-if-done t
-        org-agenda-start-with-follow-mode nil))
+        org-agenda-start-with-follow-mode nil)
 
+  (set-popup-rule! "^\\*Org Agenda" :ignore t)
+  (setq org-agenda-window-setup 'current-window))
+
+(add-hook! 'org-agenda-mode-hook :append
+  (setq org-agenda-prefix-format
+        '((agenda . " %i %-12:c%?-12t% s")
+          (todo . " %i %-12:c")
+          (tags . " %i %-12:c")
+          (search . " %i %-12:c"))))
+
+
+;;;; export
 ;;;; ox-*
 (use-package! ox-typst
   :after org)
 
 (setq! org-pandoc-menu-entry
-       (append '(
-                 (?, "to typst." org-pandoc-export-to-typst)
-                 (?, "to typst and open." org-pandoc-export-to-typst-and-open)
-                 (?, "as typst." org-pandoc-export-as-typst)
-                 (?< "to typst-pdf." org-pandoc-export-to-typst-pdf)
-                 (?< "to typst-pdf and open." org-pandoc-export-to-typst-pdf-and-open))
-               org-pandoc-menu-entry))
+       '(
+         ;;(?0 "to jats." org-pandoc-export-to-jats)
+         ;;(?0 "to jats and open." org-pandoc-export-to-jats-and-open)
+         ;;(?  "as jats." org-pandoc-export-as-jats)
+         ;;(?1 "to epub2 and open." org-pandoc-export-to-epub2-and-open)
+         ;;(?! "to epub2." org-pandoc-export-to-epub2)
+         ;;(?2 "to tei." org-pandoc-export-to-tei)
+         ;;(?2 "to tei and open." org-pandoc-export-to-tei-and-open)
+         ;;(?" "as tei." org-pandoc-export-as-tei)
+         ;;(?3 "to markdown_mmd." org-pandoc-export-to-markdown_mmd)
+         (?3 "to markdown_mmd and open." org-pandoc-export-to-markdown_mmd-and-open)
+         (?# "as markdown_mmd." org-pandoc-export-as-markdown_mmd)
+         (?4 "to html5." org-pandoc-export-to-html5)
+         (?4 "to html5 and open." org-pandoc-export-to-html5-and-open)
+         (?$ "as html5." org-pandoc-export-as-html5)
+         (?5 "to html5-pdf and open." org-pandoc-export-to-html5-pdf-and-open)
+         (?% "to html5-pdf." org-pandoc-export-to-html5-pdf)
+         ;;(?6 "to markdown_phpextra." org-pandoc-export-to-markdown_phpextra)
+         ;;(?6 "to markdown_phpextra and open." org-pandoc-export-to-markdown_phpextra-and-open)
+         ;;(?& "as markdown_phpextra." org-pandoc-export-as-markdown_phpextra)
+         ;;(?7 "to markdown_strict." org-pandoc-export-to-markdown_strict)
+         ;;(?7 "to markdown_strict and open." org-pandoc-export-to-markdown_strict-and-open)
+         ;;(?' "as markdown_strict." org-pandoc-export-as-markdown_strict)
+         ;;(?8 "to opendocument." org-pandoc-export-to-opendocument)
+         ;;(?8 "to opendocument and open." org-pandoc-export-to-opendocument-and-open)
+         ;;(?( "as opendocument." org-pandoc-export-as-opendocument)
+         ;;(?9 "to opml." org-pandoc-export-to-opml)
+         ;;(?9 "to opml and open." org-pandoc-export-to-opml-and-open)
+         ;;(?) "as opml." org-pandoc-export-as-opml)
+         ;;(?: "to rst." org-pandoc-export-to-rst)
+         ;;(?: "to rst and open." org-pandoc-export-to-rst-and-open)
+         ;;(?* "as rst." org-pandoc-export-as-rst)
+         ;;(?< "to slideous." org-pandoc-export-to-slideous)
+         ;; (?\[ "to jira." org-pandoc-export-to-jira)
+         ;; (?\[ "as jira." org-pandoc-export-as-jira)
+         ;; (?< "to slideous and open." org-pandoc-export-to-slideous-and-open)
+         ;; (?, "as slideous." org-pandoc-export-as-slideous)
+         (?= "to ms-pdf and open." org-pandoc-export-to-ms-pdf-and-open)
+         (?- "to ms-pdf." org-pandoc-export-to-ms-pdf)
+         ;;(?> "to textile." org-pandoc-export-to-textile)
+         ;;(?> "to textile and open." org-pandoc-export-to-textile-and-open)
+         ;;(?. "as textile." org-pandoc-export-as-textile)
+         ;;(?a "to asciidoc." org-pandoc-export-to-asciidoc)
+         ;;(?a "to asciidoc and open." org-pandoc-export-to-asciidoc-and-open)
+         ;;(?A "as asciidoc." org-pandoc-export-as-asciidoc)
+         (?b "to beamer-pdf and open." org-pandoc-export-to-beamer-pdf-and-open)
+         (?B "to beamer-pdf." org-pandoc-export-to-beamer-pdf)
+         ;; (?c "to context-pdf and open." org-pandoc-export-to-context-pdf-and-open)
+         ;; (?C "to context-pdf." org-pandoc-export-to-context-pdf)
+         ;;(?d "to docbook5." org-pandoc-export-to-docbook5)
+         (?d "to docbook5 and open." org-pandoc-export-to-docbook5-and-open)
+         (?D "as docbook5." org-pandoc-export-as-docbook5)
+         ;; (?e "to epub3 and open." org-pandoc-export-to-epub3-and-open)
+         ;; (?E "to epub3." org-pandoc-export-to-epub3)
+         ;;(?f "to fb2." org-pandoc-export-to-fb2)
+         ;;(?f "to fb2 and open." org-pandoc-export-to-fb2-and-open)
+         ;;(?F "as fb2." org-pandoc-export-as-fb2)
+         ;;(?g "to gfm." org-pandoc-export-to-gfm)
+         (?g "to gfm and open." org-pandoc-export-to-gfm-and-open)
+         (?G "as gfm." org-pandoc-export-as-gfm)
+         ;;(?h "to html4." org-pandoc-export-to-html4)
+         (?h "to html4 and open." org-pandoc-export-to-html4-and-open)
+         (?H "as html4." org-pandoc-export-as-html4)
+         ;;(?i "to icml." org-pandoc-export-to-icml)
+         ;; (?i "to icml and open." org-pandoc-export-to-icml-and-open)
+         ;; (?I "as icml." org-pandoc-export-as-icml)
+         ;;(?j "to json." org-pandoc-export-to-json)
+         (?j "to json and open." org-pandoc-export-to-json-and-open)
+         (?J "as json." org-pandoc-export-as-json)
+         ;;(?k "to markdown." org-pandoc-export-to-markdown)
+         ;;(?k "to markdown and open." org-pandoc-export-to-markdown-and-open)
+         ;;(?K "as markdown." org-pandoc-export-as-markdown)
+         (?l "to latex-pdf and open." org-pandoc-export-to-latex-pdf-and-open)
+         (?L "to latex-pdf." org-pandoc-export-to-latex-pdf)
+         ;;(?m "to man." org-pandoc-export-to-man)
+         (?m "to man and open." org-pandoc-export-to-man-and-open)
+         (?M "as man." org-pandoc-export-as-man)
+         ;;(?n "to native." org-pandoc-export-to-native)
+         (?n "to native and open." org-pandoc-export-to-native-and-open)
+         (?N "as native." org-pandoc-export-as-native)
+         (?o "to odt and open." org-pandoc-export-to-odt-and-open)
+         (?O "to odt." org-pandoc-export-to-odt)
+         (?p "to pptx and open." org-pandoc-export-to-pptx-and-open)
+         (?P "to pptx." org-pandoc-export-to-pptx)
+         ;;(?q "to commonmark." org-pandoc-export-to-commonmark)
+         ;;(?q "to commonmark and open." org-pandoc-export-to-commonmark-and-open)
+         ;;(?Q "as commonmark." org-pandoc-export-as-commonmark)
+         ;;(?r "to rtf." org-pandoc-export-to-rtf)
+         (?r "to rtf and open." org-pandoc-export-to-rtf-and-open)
+         (?R "as rtf." org-pandoc-export-as-rtf)
+         ;;(?s "to s5." org-pandoc-export-to-s5)
+         ;;(?s "to s5 and open." org-pandoc-export-to-s5-and-open)
+         ;;(?S "as s5." org-pandoc-export-as-s5)
+         ;;(?t "to texinfo." org-pandoc-export-to-texinfo)
+         ;;(?t "to texinfo and open." org-pandoc-export-to-texinfo-and-open)
+         ;;(?T "as texinfo." org-pandoc-export-as-texinfo)
+	 ;; (?, "to typst." org-pandoc-export-to-typst)
+         (?, "to typst and open." org-pandoc-export-to-typst-and-open)
+         ;; (?, "as typst." org-pandoc-export-as-typst)
+         ;; (?< "to typst-pdf." org-pandoc-export-to-typst-pdf)
+         (?< "to typst-pdf and open." org-pandoc-export-to-typst-pdf-and-open)
+         ;;(?u "to dokuwiki." org-pandoc-export-to-dokuwiki)
+         ;; (?u "to dokuwiki and open." org-pandoc-export-to-dokuwiki-and-open)
+         ;; (?U "as dokuwiki." org-pandoc-export-as-dokuwiki)
+         ;;(?v "to revealjs." org-pandoc-export-to-revealjs)
+         ;; (?v "to revealjs and open." org-pandoc-export-to-revealjs-and-open)
+         ;; (?V "as revealjs." org-pandoc-export-as-revealjs)
+         ;;(?w "to mediawiki." org-pandoc-export-to-mediawiki)
+         ;; (?w "to mediawiki and open." org-pandoc-export-to-mediawiki-and-open)
+         ;; (?W "as mediawiki." org-pandoc-export-as-mediawiki)
+         (?x "to docx and open." org-pandoc-export-to-docx-and-open)
+         (?X "to docx." org-pandoc-export-to-docx)
+         ;;(?y "to slidy." org-pandoc-export-to-slidy)
+         ;; (?y "to slidy and open." org-pandoc-export-to-slidy-and-open)
+         ;; (?Y "as slidy." org-pandoc-export-as-slidy)
+         ;;(?z "to dzslides." org-pandoc-export-to-dzslides)
+         ;; (?z "to dzslides and open." org-pandoc-export-to-dzslides-and-open)
+         ;; (?Z "as dzslides." org-pandoc-export-as-dzslides)
+         ;;(?{ "to muse." org-pandoc-export-to-muse)
+         ;;(?{ "to muse and open." org-pandoc-export-to-muse-and-open)
+         ;;(?[ "as muse." org-pandoc-export-as-muse)
+         ;;(?} "to zimwiki." org-pandoc-export-to-zimwiki)
+         ;;(?} "to zimwiki and open." org-pandoc-export-to-zimwiki-and-open)
+         ;;(?] "as zimwiki." org-pandoc-export-as-zimwiki)
+         ;;(?~ "to haddock." org-pandoc-export-to-haddock)
+         ;;(?~ "to haddock and open." org-pandoc-export-to-haddock-and-open)
+         ;;(?^ "as haddock." org-pandoc-export-as-haddock)
+         ))
 (plist-put org-format-latex-options :background "Transparent")
 
 
@@ -274,10 +432,13 @@
 (map! :after org
       :map org-mode-map
       :n "gj" #'evil-next-visual-line
-      :n "gk" #'evil-previous-visual-line)
-
+      :n "gk" #'evil-previous-visual-line
+      :nv "zD" #'org-fold-hide-drawer-all
+      :nv "zq" #'org-fold-hide-block-all)
 (setq! evil-snipe-scope 'whole-buffer)
 
 ;;; Evil
 ;;;; Modes that evil is disabled
 ;;;; Bindings
+(map! :map evil-window-map
+      :g "O" #'delete-other-windows)

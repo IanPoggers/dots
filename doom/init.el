@@ -49,8 +49,7 @@
        ;;neotree           ; a project drawer, like NERDTree for vim
        ophints           ; highlight the region an operation acts on
        (popup +defaults)   ; tame sudden yet inevitable temporary windows
-       (smooth-scroll     ; So smooth you won't believe it's not butter
-        +interpolate)
+       (smooth-scroll)     ; So smooth you won't believe it's not butter
        ;;tabs              ; a tab bar for Emacs
        (treemacs +lsp)          ; a project drawer, like neotree but cooler
        unicode           ; extended unicode support for various languages
@@ -187,11 +186,12 @@
        ;;ocaml             ; an objective camel
        (org               ; organize your plain life in plain text
         +noter
+        +pomodoro
         +dragndrop
         +gnuplot
-        +pretty
         +pandoc
         +journal)
+       ;;+pretty
 
        ;;php               ; perl's insecure younger brother
        ;;plantuml          ; diagrams for confusing people more

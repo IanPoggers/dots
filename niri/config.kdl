@@ -3,6 +3,13 @@
 // Check the wiki for a full description of the configuration:
 // https://yalter.github.io/niri/Configuration:-Introduction
 
+
+// This line starts waybar, a commonly used bar for Wayland compositors.
+spawn-at-startup "mako"
+spawn-at-startup "waybar"
+spawn-at-startup "swww restore"
+spawn-at-startup "swayidle" "-w" "timeout" "601" "niri msg action power-off-monitors" "timeout" "600" "swaylock -f" "before-sleep" "swaylock -f"
+
 // Input device configuration.
 // Find the full list of options on the wiki:
 // https://yalter.github.io/niri/Configuration:-Input
@@ -168,7 +175,7 @@ layout {
     // You can change how the focus ring looks.
     focus-ring {
         // Uncomment this line to disable the focus ring.
-        off
+        //off
 
         // How many logical pixels the ring extends out from the windows.
         width 2
@@ -204,7 +211,7 @@ layout {
     }
 
     // You can also add a border. It's similar to the focus ring, but always visible.
-    border {
+    /-border {
         // The settings are the same as for the focus ring.
         // If you enable the border, you probably want to disable the focus ring.
 
@@ -278,10 +285,6 @@ layout {
 // which may be more convenient to use.
 // See the binds section below for more spawn examples.
 
-// This line starts waybar, a commonly used bar for Wayland compositors.
-spawn-at-startup "mako"
-spawn-at-startup "waybar"
-spawn-at-startup "swayidle" "-w" "timeout" "601" "niri msg action power-off-monitors" "timeout" "600" "swaylock -f" "before-sleep" "swaylock -f"
 
 // To run a shell command (with variables, pipes, etc.), use spawn-at-startup:
 // spawn-at-startup "qs -c ~/source/qs/MyAwesomeShell"
@@ -296,12 +299,12 @@ hotkey-overlay {
 // Additionally, clients will be informed that they are tiled, removing some client-side rounded corners.
 // This option will also fix border/focus ring drawing behind some semitransparent windows.
 // After enabling or disabling this, you need to restart the apps for this to take effect.
-// prefer-no-csd
+prefer-no-csd
 
 // You can change the path where screenshots are saved.
 // A ~ at the front will be expanded to the home directory.
 // The path is formatted with strftime(3) to give you the screenshot date and time.
-screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+screenshot-path "~/img/screenshots/%Y-%m-%d %H-%M-%S.png"
 
 // You can also set this to null to disable saving screenshots to disk.
 // screenshot-path null
@@ -390,10 +393,10 @@ binds {
     // Example volume keys mappings for PipeWire & WirePlumber.
     // The allow-when-locked=true property makes them work even when the session is locked.
     // Using spawn allows to pass multiple arguments together with the command.
-    XF86AudioRaiseVolume allow-when-locked=true { spawn "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"; }
-    XF86AudioLowerVolume allow-when-locked=true { spawn "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"; }
-    XF86AudioMute        allow-when-locked=true { spawn "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
-    XF86AudioMicMute     allow-when-locked=true { spawn "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"; }
+    XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
+    XF86AudioMicMute     allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
 
     // Example brightness key mappings for brightnessctl.
     // You can use regular spawn with multiple arguments too (to avoid going through "sh"),
@@ -405,7 +408,7 @@ binds {
     // You can also move the mouse into the top-left hot corner,
     // or do a four-finger swipe up on a touchpad.
     Mod+O repeat=false { toggle-overview; }
-    Mod+Space repeat=false { toggle-overview; }
+    //Mod+Space repeat=false { toggle-overview; }
 
     Mod+Q repeat=false { close-window; }
 
@@ -556,9 +559,11 @@ binds {
     Mod+Ctrl+F { expand-column-to-available-width; }
 
     Mod+C { center-column; }
+    Mod+Space { center-column; }
+    Mod+M { center-column; }
 
     // Center all fully visible columns on screen.
-    Mod+Ctrl+C { center-visible-columns; }
+    Mod+Shift+C { center-visible-columns; }
 
     // Finer width adjustments.
     // This command can also:
