@@ -50,7 +50,7 @@ input {
         drag true
         // drag-lock
         //natural-scroll
-        accel-speed 0.40
+        accel-speed 0.50
         // accel-profile "flat"
         // scroll-method "two-finger"
         // disabled-on-external-mouse
@@ -76,11 +76,11 @@ input {
     }
 
     // Uncomment this to make the mouse warp to the center of newly focused windows.
-    // warp-mouse-to-focus
+    warp-mouse-to-focus
 
     // Focus windows and outputs automatically when moving the mouse into them.
     // Setting max-scroll-amount="0%" makes it work only on windows already fully on screen.
-    // focus-follows-mouse max-scroll-amount="0%"
+    focus-follows-mouse // max-scroll-amount="0%"
 }
 
 // You can configure outputs by their name, which you can find
@@ -408,7 +408,7 @@ binds {
     // You can also move the mouse into the top-left hot corner,
     // or do a four-finger swipe up on a touchpad.
     Mod+O repeat=false { toggle-overview; }
-    //Mod+Space repeat=false { toggle-overview; }
+    Mod+Space repeat=false { toggle-overview; }
 
     Mod+Q repeat=false { close-window; }
 
@@ -559,7 +559,7 @@ binds {
     Mod+Ctrl+F { expand-column-to-available-width; }
 
     Mod+C { center-column; }
-    Mod+Space { center-column; }
+    //Mod+Space { center-column; }
     Mod+M { center-column; }
 
     // Center all fully visible columns on screen.

@@ -52,39 +52,24 @@
 
 (package! ox-typst
   :recipe (:host github :repo "jmpunkt/ox-typst"))
-
 (package! org-typst-preview
   :recipe (:host github :repo "remimimimimi/org-typst-preview.el"))
-
 (package! org-timeblock
   :recipe (:host github :repo "ichernyshovvv/org-timeblock"))
-
 (package! org-recur)
-
 (package! org-roam)
-
 (package! catppuccin-theme)
-
 (package! org-download)
-
 (package! mixed-pitch)
-
 (package! howm)
-
 (package! ox-typst)
-
 (package! nov)
-
 (package! org-remark)
-
 (package! visual-fill-column)
-
 (package! org-superstar)
-
 (package! auto-dim-other-buffers)
-
 (package! org-modern)
-
 (package! vimish-fold)
 (package! evil-vimish-fold)
 (package! zotxt)
+(package! denote)

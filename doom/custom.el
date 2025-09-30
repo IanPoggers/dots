@@ -15,7 +15,7 @@
      "/home/james/org/todo.org"
      "/home/james/org/todo.sync-conflict-20250924-183941-B5QACJD.org"))
  '(package-selected-packages
-   '(auto-dim-other-buffers deferred lsp-treemacs org-habit-stats org-modern
+   '(auto-dim-other-buffers deferred denote lsp-treemacs org-habit-stats org-modern
      org-noter-pdftools org-pdftools org-super-agenda ox-typst pdf-meta-edit
      request typst-ts-mode undo-tree vimish-fold visual-fill visual-fill-column
      w3m zotelo zotra)))
