@@ -2,12 +2,27 @@
 
 ;;; General Emacs
 (global-auto-revert-mode 1)
-(smartparens-global-mode 1)
+(smartparens-global-mode -1)
+(setq-default search-invisible nil)
+(after! smartparens (setq smartparens-global-mode nil))
 
 (setq! global-auto-revert-non-file-buffers t
        auto-revert-verbose nil)
 
 (setq! ispell-dictionary "en_US")
+(add-to-list 'load-path (expand-file-name "lisp/" doom-user-dir))
+(map!
+ :nv "gk" #'outline-backward-same-level
+ :nv "zu" #'outline-up-heading
+ :nv "gj" #'outline-forward-same-level)
+;;;; Relative line numbers
+(after! display-line-numbers
+  (setq display-line-numbers-type 'visual))
+(setq! display-line-numbers-type 'visual)
+;;;; Text mode line spacing
+(add-hook! 'text-mode-hook
+  (lambda ()
+    (setq-local line-spacing 3)))
 ;;;; Bindings
 (map! :g  "<f5>" 'revert-buffer)
 
@@ -16,22 +31,41 @@
 
 ;;;; PDF
 (setq! pdf-view-resize-factor 1.1
-       pdf-view-display-size 'fit-width
+       pdf-view-display-size 'fit-page
        ;;pdf-view-use-scaling t
        pdf-view-continuous nil)
 
 (after! pdf-view
   (add-hook 'pdf-view-mode-hook
             (lambda ()
-              (visual-line-fill-column-mode -1)
-              (visual-fill-column-mode -1)
               (pdf-view-auto-slice-minor-mode 1)
               (add-to-list 'pdf-view-incompatible-modes '(visual-fill-column-mode visual-line-fill-column-mode)))))
 
 ;;;; Doom Stuff
 ;; Some functionality uses this to identify you, e.g. GPG configuration, email
 ;; clients, file templates and snippets. It is optional.
-(setq! user-full-name "James Ian Pogue"
+(defun my-weebery-is-always-greater ()
+  (let* ((banner '("______ _____ ____ ___ ___"
+                   "`  _  V  _  V  _ \\|  V  ´"
+                   "| | | | | | | | | |     |"
+                   "| | | | | | | | | | . . |"
+                   "| |/ / \\ \\| | |/ /\\ |V| |"
+                   "|   /   \\__/ \\__/  \\| | |"
+                   "|  /                ' | |"
+                   "| /     E M A C S     \\ |"
+                   "´´                     ``"))
+         (longest-line (apply #'max (mapcar #'length banner))))
+    (put-text-property
+     (point)
+     (dolist (line banner (point))
+       (insert (+doom-dashboard--center
+                +doom-dashboard--width
+                (concat line (make-string (max 0 (- longest-line (length line))) 32)))
+               "\n"))
+     'face 'doom-dashboard-banner)))
+
+(setq +doom-dashboard-ascii-banner-fn #'my-weebery-is-always-greater)
+(setq! user-full-name "Ian Pogue"
        user-mail-address "jamesipogue@gmail.com")
 
 ;; Doom exposes five (optional) variables for controlling fonts in Doom:
@@ -43,72 +77,79 @@
 ;; - `doom-symbol-font' -- for symbols
 ;; - `doom-serif-font' -- for the `fixed-pitch-serif' face
 
+
+
 ;;;; Fonts and Themes
-(setq! doom-font (font-spec :family "Iosevka Nerd Font Mono" :size 16))
-(setq! doom-variable-pitch-font (font-spec :family "Atkinson Hyperlegible" :size 17))
+(setq! doom-font (font-spec :family "Iosevka Nerd Font Mono" :size 17))
+(setq! doom-variable-pitch-font (font-spec :family "Atkinson Hyperlegible" :size 20))
 ;;(setq! doom-theme 'catppuccin)
 ;;(setq! catpuccin-flavor 'latte)
 ;;(load-theme 'catppuccin t t)
 ;;(catppuccin-reload)
 
-(setq! doom-theme 'doom-gruvbox)
+(setq! doom-theme 'doom-nord)
+
+(after! org
+ (after! org-indent
+  (set-face-attribute 'org-block nil            :foreground nil :inherit 'fixed-pitch :height 0.85)
+  (set-face-attribute 'org-code nil             :inherit '(shadow fixed-pitch) :height 0.85)
+  (set-face-attribute 'org-indent nil           :inherit '(org-hide fixed-pitch) :height 0.85)
+  (set-face-attribute 'org-verbatim nil         :inherit '(shadow fixed-pitch) :height 0.85)
+  (set-face-attribute 'org-special-keyword nil  :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-meta-line nil        :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-checkbox nil         :inherit 'fixed-pitch)))
+
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
-(setq display-line-numbers-type 'relative)
 
 ;; Disable Title Bar
 (add-to-list 'default-frame-alist '(undecorated . t))
 
 
-;;;;; rapping and Mixed Pitch
+;;;;; wrapping and Mixed Pitch
 (use-package! auto-dim-other-buffers)
-(use-package! visual-fill-column
-  :hook
-  (org-mode . visual-fill-column-mode)
-  (doom-docs-mode . (lambda () (visual-fill-column-mode -1))))
 
 
 (global-visual-line-mode 1)
 
-(setq! fill-column 80
-       visual-fill-column-width 80)
+(setq! fill-column 85)
 
 
 ;;(add-hook! 'visual-line-mode-hook
 ;;  visual-fill-column-mode)
 
 (use-package! mixed-pitch
-  :hook
-  ;; If you want it in all text modes:
-  (text-mode . mixed-pitch-mode))
+  :hook (text-mode . mixed-pitch-mode))
 
-(global-visual-fill-column-mode -1)
-(setq! visual-fill-column-center-text t)
-(setq! fill-column 80)
+(setq! fill-column 85)
+
+;;;; whisper.el
+(use-package! whisper
+  :bind ("C-H-r" . whisper-run)
+  :config
+  (setq whisper-model "medium"
+        whisper-language "en"
+        whisper-translate nil))
+(map!
+ :leader "r" #'whisper-run)
 
 ;;; Calendar https://github.com/kiwanami/emacs-calfw
 (setq! cfw:render-line-breaker 'cfw:render-line-breaker-wordwrap
        cfw:display-calendar-holidays nil)
 
-;; Define my own calendar function
-;; I have decided to not use this funciton for now, but this could be changed in the future
 (defun my-open-calendar ()
   (interactive)
   (cfw:open-calendar-buffer
    :contents-sources
    (list
-    (cfw:org-create-source "Light Grey"))))  ; org-agenda source
-                                        ;(cfw:howm-create-source "Blue")  ; howm source
-                                        ;(cfw:cal-create-source "Orange") ; diary source
-                                        ;(cfw:ical-create-source "Moon" "~/moon.ics" "Gray")  ; ICS source1
-                                        ;(cfw:ical-create-source "gcal"
-                                        ;"https://bc.instructure.com/feeds/calendars/user_lAcbipQjOdEkynqm9tpSh6WgdZPIv89v8qusdQIF.ics"
-                                        ;"Orange")))) ; google calendar ICS
+    (cfw:org-create-source "light blue")  ; org-agenda source
+    (cfw:ical-create-source "canvas" "https://bc.instructure.com/feeds/calendars/user_lAcbipQjOdEkynqm9tpSh6WgdZPIv89v8qusdQIF.ics" "Orange")))) ; google calendar ICS
 
-;;(map! :leader
-;;(:prefix ("o" . "open")
-;;:desc "Calendar" "c" #'my-open-calendar)))))
+
+(map! :leader
+      (:prefix ("o" . "open")
+       :desc "Calendar" "v" #'my-open-calendar))
 
 (map! :leader
       (:prefix ("o" . "open")
@@ -116,35 +157,209 @@
 
 ;;; Org
 (setq! org-directory "~/org/"
-       org-roam-directory "~/Sync/Roam/"
+       org-roam-directory "~/doc/roam/"
        org-archive-location "~/org/archive/%s_archive::")
 
 (after! org
   (setq
-   org-startup-folded t ;; Apparently 'fold does not work for some reason
+   org-export-with-tags nil
+   org-export-initial-scope 'subtree
+   org-pretty-entities t
+   org-pretty-entities-include-sub-superscripts t
+   org-use-sub-superscripts t
+   org-export-with-section-numbers nil
+   org-export-with-toc nil
+   org-startup-folded 'fold ;; Apparently 'fold does not work for some reason
    org-hide-drawer-startup t
+   org-image-align 'center
+   org-startup-with-latex-preview t
+   org-startup-with-inline-images t
+   org-indent-indentation-per-level 1
    org-cycle-hide-drawer-startup t
+   org-cycle-inline-images-display t
+   org-image-max-width 440 ; TODO what's the best value for this??
    org-cycle-hide-block-startup t
-   org-hide-leading-stars nil)
+   org-hide-leading-stars t)
   (set-face-attribute 'org-quote nil
                       :family "Crimson Pro"
                       :height 1.1)
 
   (add-hook 'org-mode-hook (lambda ()
                              (setq
-                              org-startup-folded t
+                              org-startup-folded 'fold
                               org-hide-drawer-startup t
                               org-cycle-hide-drawer-startup t
+                              display-line-numbers-type 'visual
                               org-cycle-hide-block-startup t
-                              org-hide-leading-stars nil)
-                             (visual-fill-column-mode 1))))
+                              org-hide-leading-stars t)
+                             (org-num-mode -1)
+                             (cdlatex-mode -1)
+                             (ultra-scroll-mode -1)
+                             (org-modern-mode -1)
+                             (org-superstar-mode 1)
+                             (org-latex-preview-center-mode 1)
+                             (olivetti-mode 1)
+                             ;;(visual-fill-column-mode 1)
+                             (org-cdlatex-mode -1)))
+  ;; Resize Org headings
+  (dolist (face '((org-level-1 . 1.30)
+                  (org-level-2 . 1.25)
+                  (org-level-3 . 1.2)
+                  (org-level-4 . 1.1)
+                  (org-level-5 . 1.1)
+                  (org-level-6 . 1.1)
+                  (org-level-7 . 1.1)
+                  (org-level-8 . 1.1)))
+    (set-face-attribute (car face) nil :font "Atkinson Hyperlegible" :weight 'semibold :height (cdr face)))
+
+  ;; Make the document title a bit bigger
+  (set-face-attribute 'org-document-title nil :font "Atkinson Hyperlegible" :weight
+                      'semibold :height 1.8))
+
+(map! :leader "n/" #'consult-org-agenda)
+
+;;;; org-superstar
+(use-package! org-superstar
+  :config
+  (setq org-superstar-leading-bullet " ")
+  (setq org-superstar-special-todo-items t) ;; Makes TODO header bullets into boxes
+  (setq org-superstar-todo-bullet-alist '(("TODO" . 9744)
+                                          ("DONE" . 9744)
+                                          ("READ" . 9744)
+                                          ("IDEA" . 9744)
+                                          ("WAITING" . 9744)
+                                          ("CANCELLED" . 9744)
+                                          ("PROJECT" . 9744)
+                                          ("POSTPONED" . 9744))))
 
 
-;;;; latex preview
-
+;;;; +dragndrop
+(use-package! org-download
+  :defer t
+  :init
+  (setq-default org-download-image-dir "images")
+  (map! :map org-mode-map
+        :localleader
+        :desc "Rename image at point" "a C" #'org-download-rename-at-point)
+  :config
+  (setq org-download-method 'directory
+        org-download-link-format "[[file:images/%s]]\n"
+        org-download-heading-lvl nil))
+;;;; org-latex
 (after! org
-  (plist-put org-format-latex-options :scale 0.54))
+  (setq org-latex-image-default-width "0.65\\linewidth"
+        org-latex-default-class "article"))
+;;;; org-modern
+(after! org-modern
+  (setq!
+   org-modern-checkbox nil
+   org-modern-keyword nil))
+;;;; latex preview
+;; code for centering LaTeX previews -- a terrible idea
+;; TODO enable latex previews in org-roam and latex buffers (use xenops)
 
+;; TODO enable latex previews in org-roam and latex buffers (use xenops)
+
+;; modified from https://abode.karthinks.com/org-latex-preview/
+
+;; TODO enable latex previews in org-roam and latex buffers (use xenops)
+
+;; modified from https://abode.karthinks.com/org-latex-preview/
+(use-package! org-latex-preview
+  :after org
+  :hook (org-mode . org-latex-preview-mode)
+  :init
+  (setq org-startup-with-latex-preview t)
+
+  (after! org
+    (dolist (pkg '("amsmath" "amssymb" "mathtools" "mathrsfs" "pgfplots"))
+      (add-to-list 'org-latex-packages-alist `("" ,pkg t))))
+
+  :config
+  (plist-put org-latex-preview-appearance-options
+             ;; :page-width 0.8)
+             :page-width 0.8)
+  (plist-put org-latex-preview-appearance-options
+             :scale .5)
+  (plist-put org-latex-preview-appearance-options
+             :zoom 1.1)
+
+  (setq         org-latex-preview-numbered t
+                org-latex-preview-mode-display-live t
+                org-latex-preview-process-alist '((dvipng :programs ("latex" "dvipng") :description "dvi > png" :message
+                                                   "you need to install the programs: latex and dvipng." :image-input-type
+                                                   "dvi" :image-output-type "png" :latex-compiler
+                                                   ("%l -interaction nonstopmode -output-directory %o %f")
+                                                   :latex-precompiler
+                                                   ("%l -output-directory %o -ini -jobname=%b \"&%L\" mylatexformat.ltx %f")
+                                                   :image-converter
+                                                   ("dvipng --follow -D %D -T tight --depth --height -o %B-%%09d.png %f")
+                                                   :transparent-image-converter
+                                                   ("dvipng --follow -D %D -T tight -bg Transparent --depth --height -o %B-%%09d.png %f"))
+                                                  (dvisvgm :programs ("latex" "dvisvgm") :description "dvi > svg" :message
+                                                           "you need to install the programs: latex and dvisvgm."
+                                                           :image-input-type "dvi" :image-output-type "svg" :latex-compiler
+                                                           ("%l -interaction nonstopmode -output-directory %o %f")
+                                                           :latex-precompiler
+                                                           ("%l -output-directory %o -ini -jobname=%b \"&%L\" mylatexformat.ltx %f")
+                                                           :image-converter
+                                                           ("dvisvgm --page=1- --optimize --clipjoin --relative --no-fonts -v3 --message='processing page {?pageno}: output written to {?svgpath}' --bbox=min -o %B-%%9p.svg %f"))
+                                                  (imagemagick :programs ("pdflatex" "convert") :description "pdf > png" :message
+                                                               "you need to install the programs: latex and imagemagick."
+                                                               :image-input-type "pdf" :image-output-type "png" :latex-compiler
+                                                               ("pdflatex -interaction nonstopmode -output-directory %o %f")
+                                                               :latex-precompiler
+                                                               ("pdftex -output-directory %o -ini -jobname=%b \"&pdflatex\" mylatexformat.ltx %f")
+                                                               :image-converter
+                                                               ("convert -density %D -trim -antialias %f -quality 100 %B-%%09d.png")))
+                org-latex-preview-mode-update-delay 0.20)
+  ;; org-latex-preview-cache 'temp) ;; HACK fix `org-persist' issue: https://discord.com/channels/406534637242810369/1056621127188881439/1392466785168785540
+
+  ;; code for centering LaTeX previews -- a terrible idea
+  (defun my/org-latex-preview-uncenter (ov)
+    (overlay-put ov 'before-string nil))
+  (defun my/org-latex-preview-recenter (ov)
+    (overlay-put ov 'before-string (overlay-get ov 'justify)))
+  (defun my/org-latex-preview-center (ov)
+    (save-excursion
+      (goto-char (overlay-start ov))
+      (when-let* ((elem (org-element-context))
+                  ((or (eq (org-element-type elem) 'latex-environment)
+                       (string-match-p "^\\\\\\[" (org-element-property :value elem))))
+                  (img (overlay-get ov 'display))
+                  (prop `(space :align-to (- center (0.55 . ,img))))
+                  (justify (propertize " " 'display prop 'face 'default)))
+        (overlay-put ov 'justify justify)
+        (overlay-put ov 'before-string (overlay-get ov 'justify)))))
+  (define-minor-mode org-latex-preview-center-mode
+    "Center equations previewed with `org-latex-preview'."
+    :global nil
+    (if org-latex-preview-center-mode
+        (progn
+          (add-hook 'org-latex-preview-overlay-open-functions
+                    #'my/org-latex-preview-uncenter nil :local)
+          (add-hook 'org-latex-preview-overlay-close-functions
+                    #'my/org-latex-preview-recenter nil :local)
+          (add-hook 'org-latex-preview-overlay-update-functions
+                    #'my/org-latex-preview-center nil :local))
+      (remove-hook 'org-latex-preview-overlay-close-functions
+                   #'my/org-latex-preview-recenter)
+      (remove-hook 'org-latex-preview-overlay-update-functions
+                   #'my/org-latex-preview-center)
+      (remove-hook 'org-latex-preview-overlay-open-functions
+                   #'my/org-latex-preview-uncenter))))
+
+(after! org-latex-preview-mode
+  (setq org-latex-preview-mode-hook
+        (lambda () (org-latex-preview-center-mode 1))))
+
+
+;; TODO No need after using new org version??????
+;;(after! org
+;;(plist-put org-format-latex-options :scale .60))
+;; TODO enable latex previews in org-roam and latex buffers (use xenops)
+
+;; modified from https://abode.karthinks.com/org-latex-preview/
 
 ;;;; Timeblock
 (after! org-timeblock
@@ -156,26 +371,47 @@
   (setq
    org-pomodoro-start-sound-p t))
 ;;;; capture TODO
-;;(after! org
 (after! org
   (setq org-capture-templates
-        (append org-capture-templates
-                '(("c" "Templates for classes")))))
+        '(("t" "Personal todo" entry (file+headline +org-capture-todo-file "Inbox")
+           "* [ ] %?\n%i\n%a" :prepend t)
+          ("n" "Personal notes" entry (file+headline +org-capture-notes-file "Inbox")
+           "* %u %?\n%i\n%a" :prepend t)
+          ("j" "Journal" entry (file+olp+datetree +org-capture-journal-file) "* %U %?\n%i\n%a"
+           :prepend t)
+          ("p" "Templates for projects")
+          ("pt" "Project-local todo" entry
+           (file+headline +org-capture-project-todo-file "Inbox") "* TODO %?\n%i\n%a" :prepend
+           t)
+          ("pn" "Project-local notes" entry
+           (file+headline +org-capture-project-notes-file "Inbox") "* %U %?\n%i\n%a" :prepend
+           t)
+          ("pc" "Project-local changelog" entry
+           (file+headline +org-capture-project-changelog-file "Unreleased") "* %U %?\n%i\n%a"
+           :prepend t)
+          ("o" "Centralized templates for projects")
+          ("ot" "Project todo" entry #'+org-capture-central-project-todo-file
+           "* TODO %?\n %i\n %a" :heading "Tasks" :prepend nil)
+          ("on" "Project notes" entry #'+org-capture-central-project-notes-file
+           "* %U %?\n %i\n %a" :heading "Notes" :prepend t)
+          ("oc" "Project changelog" entry #'+org-capture-central-project-changelog-file
+           "* %U %?\n %i\n %a" :heading "Changelog" :prepend t)
+          ("c" "Templates for classes"))))
 ;;;; Journal
 (after! org-journal
   (setq
+   org-journal-file-format "%Y"
    org-journal-dir "~/org/journal/"
    org-journal-file-type 'yearly))
 
+(map! :leader "njo" (lambda () (interactive) (org-journal-open-current-journal-file) (read-only-mode))
+      :leader "oj" (lambda () (interactive) (org-journal-open-current-journal-file) (read-only-mode)))
 ;;;; zotero
 (defun my-org-zotero-open (path _)
   (call-process "xdg-open" nil nil nil (concat "zotero:" path)))
 (after! org
   (org-link-set-parameters "zotero" :follow #'my-org-zotero-open))
 
-;;;; Visual
-(setq! org-hide-leading-stars nil)
-(setq! org-hide-leading-stars-before-indent-mode nil) ;; if you use indent mode
 ;;;; Timeblock
 (use-package! org-timeblock)
 (after! org-timeblock
@@ -187,11 +423,10 @@
 
 ;;;; Noter
 (use-package! org-noter
-  :after org)
-
-(after! org-noter
+  :after org
+  :config
   (setq org-noter-hide-other t
-        org-noter-max-short-selected-text-length 200 ;; Determines how long until it substitutes with 'notes for..'
+        org-noter-max-short-selected-text-length nil ;; Determines how long until it substitutes with 'notes for..'
         org-noter-highlight-selected-text t
         org-noter-use-indirect-buffer t
         org-noter-always-create-frame nil
@@ -213,21 +448,33 @@
                (display-buffer-in-side-window)
 
                (side . right)           ;; or 'left, 'bottom, 'top
-               (window-width . 0.4)     ;; or use window-height for top/bottom
+               (window-width . 0.7)     ;; or use window-height for top/bottom
                (slot . 0)
                (window-parameters . ((no-delete-other-windows . t)))))
 
 
 ;; Hide some tags such as ATTATCH
 (after! org-agenda
+  (custom-set-faces!
+    '(org-agenda-date-today :underline t :box t))
   (setq org-agenda-hide-tags-regexp (concat org-agenda-hide-tags-regexp "\\|ATTACH")
-        org-agenda-files (append org-agenda-files '("~/org/" "~/org/journal/"))
+        org-agenda-files (append org-agenda-files '("~/org/" "~/org/journal/" "~/doc/notes/"))
         org-agenda-follow-indirect nil ;; TODO What's the best value for this to not be confusing
         org-agenda-skip-scheduled-if-done t
         org-agenda-window-setup 'current-window
         org-agenda-window-frame-fractions '(0.5 . 0.8)
         org-agenda-skip-deadline-if-done t
+        org-startup-shrink-all-tables t
         org-agenda-start-with-follow-mode nil)
+
+  (setq org-agenda-custom-commands
+        '(("n" "Agenda and all TODOs" ((agenda "") (alltodo "")))
+          ("u" "Unscheduled TODOs"
+           todo ""
+           ((org-agenda-skip-function
+             '(org-agenda-skip-entry-if 'scheduled 'deadline))
+            (org-agenda-overriding-header "Unscheduled TODOs")))))
+
 
   (set-popup-rule! "^\\*Org Agenda" :ignore t)
   (setq org-agenda-window-setup 'current-window))
@@ -245,135 +492,6 @@
 (use-package! ox-typst
   :after org)
 
-(setq! org-pandoc-menu-entry
-       '(
-         ;;(?0 "to jats." org-pandoc-export-to-jats)
-         ;;(?0 "to jats and open." org-pandoc-export-to-jats-and-open)
-         ;;(?  "as jats." org-pandoc-export-as-jats)
-         ;;(?1 "to epub2 and open." org-pandoc-export-to-epub2-and-open)
-         ;;(?! "to epub2." org-pandoc-export-to-epub2)
-         ;;(?2 "to tei." org-pandoc-export-to-tei)
-         ;;(?2 "to tei and open." org-pandoc-export-to-tei-and-open)
-         ;;(?" "as tei." org-pandoc-export-as-tei)
-         ;;(?3 "to markdown_mmd." org-pandoc-export-to-markdown_mmd)
-         (?3 "to markdown_mmd and open." org-pandoc-export-to-markdown_mmd-and-open)
-         (?# "as markdown_mmd." org-pandoc-export-as-markdown_mmd)
-         (?4 "to html5." org-pandoc-export-to-html5)
-         (?4 "to html5 and open." org-pandoc-export-to-html5-and-open)
-         (?$ "as html5." org-pandoc-export-as-html5)
-         (?5 "to html5-pdf and open." org-pandoc-export-to-html5-pdf-and-open)
-         (?% "to html5-pdf." org-pandoc-export-to-html5-pdf)
-         ;;(?6 "to markdown_phpextra." org-pandoc-export-to-markdown_phpextra)
-         ;;(?6 "to markdown_phpextra and open." org-pandoc-export-to-markdown_phpextra-and-open)
-         ;;(?& "as markdown_phpextra." org-pandoc-export-as-markdown_phpextra)
-         ;;(?7 "to markdown_strict." org-pandoc-export-to-markdown_strict)
-         ;;(?7 "to markdown_strict and open." org-pandoc-export-to-markdown_strict-and-open)
-         ;;(?' "as markdown_strict." org-pandoc-export-as-markdown_strict)
-         ;;(?8 "to opendocument." org-pandoc-export-to-opendocument)
-         ;;(?8 "to opendocument and open." org-pandoc-export-to-opendocument-and-open)
-         ;;(?( "as opendocument." org-pandoc-export-as-opendocument)
-         ;;(?9 "to opml." org-pandoc-export-to-opml)
-         ;;(?9 "to opml and open." org-pandoc-export-to-opml-and-open)
-         ;;(?) "as opml." org-pandoc-export-as-opml)
-         ;;(?: "to rst." org-pandoc-export-to-rst)
-         ;;(?: "to rst and open." org-pandoc-export-to-rst-and-open)
-         ;;(?* "as rst." org-pandoc-export-as-rst)
-         ;;(?< "to slideous." org-pandoc-export-to-slideous)
-         ;; (?\[ "to jira." org-pandoc-export-to-jira)
-         ;; (?\[ "as jira." org-pandoc-export-as-jira)
-         ;; (?< "to slideous and open." org-pandoc-export-to-slideous-and-open)
-         ;; (?, "as slideous." org-pandoc-export-as-slideous)
-         (?= "to ms-pdf and open." org-pandoc-export-to-ms-pdf-and-open)
-         (?- "to ms-pdf." org-pandoc-export-to-ms-pdf)
-         ;;(?> "to textile." org-pandoc-export-to-textile)
-         ;;(?> "to textile and open." org-pandoc-export-to-textile-and-open)
-         ;;(?. "as textile." org-pandoc-export-as-textile)
-         ;;(?a "to asciidoc." org-pandoc-export-to-asciidoc)
-         ;;(?a "to asciidoc and open." org-pandoc-export-to-asciidoc-and-open)
-         ;;(?A "as asciidoc." org-pandoc-export-as-asciidoc)
-         (?b "to beamer-pdf and open." org-pandoc-export-to-beamer-pdf-and-open)
-         (?B "to beamer-pdf." org-pandoc-export-to-beamer-pdf)
-         ;; (?c "to context-pdf and open." org-pandoc-export-to-context-pdf-and-open)
-         ;; (?C "to context-pdf." org-pandoc-export-to-context-pdf)
-         ;;(?d "to docbook5." org-pandoc-export-to-docbook5)
-         (?d "to docbook5 and open." org-pandoc-export-to-docbook5-and-open)
-         (?D "as docbook5." org-pandoc-export-as-docbook5)
-         ;; (?e "to epub3 and open." org-pandoc-export-to-epub3-and-open)
-         ;; (?E "to epub3." org-pandoc-export-to-epub3)
-         ;;(?f "to fb2." org-pandoc-export-to-fb2)
-         ;;(?f "to fb2 and open." org-pandoc-export-to-fb2-and-open)
-         ;;(?F "as fb2." org-pandoc-export-as-fb2)
-         ;;(?g "to gfm." org-pandoc-export-to-gfm)
-         (?g "to gfm and open." org-pandoc-export-to-gfm-and-open)
-         (?G "as gfm." org-pandoc-export-as-gfm)
-         ;;(?h "to html4." org-pandoc-export-to-html4)
-         (?h "to html4 and open." org-pandoc-export-to-html4-and-open)
-         (?H "as html4." org-pandoc-export-as-html4)
-         ;;(?i "to icml." org-pandoc-export-to-icml)
-         ;; (?i "to icml and open." org-pandoc-export-to-icml-and-open)
-         ;; (?I "as icml." org-pandoc-export-as-icml)
-         ;;(?j "to json." org-pandoc-export-to-json)
-         (?j "to json and open." org-pandoc-export-to-json-and-open)
-         (?J "as json." org-pandoc-export-as-json)
-         ;;(?k "to markdown." org-pandoc-export-to-markdown)
-         ;;(?k "to markdown and open." org-pandoc-export-to-markdown-and-open)
-         ;;(?K "as markdown." org-pandoc-export-as-markdown)
-         (?l "to latex-pdf and open." org-pandoc-export-to-latex-pdf-and-open)
-         (?L "to latex-pdf." org-pandoc-export-to-latex-pdf)
-         ;;(?m "to man." org-pandoc-export-to-man)
-         (?m "to man and open." org-pandoc-export-to-man-and-open)
-         (?M "as man." org-pandoc-export-as-man)
-         ;;(?n "to native." org-pandoc-export-to-native)
-         (?n "to native and open." org-pandoc-export-to-native-and-open)
-         (?N "as native." org-pandoc-export-as-native)
-         (?o "to odt and open." org-pandoc-export-to-odt-and-open)
-         (?O "to odt." org-pandoc-export-to-odt)
-         (?p "to pptx and open." org-pandoc-export-to-pptx-and-open)
-         (?P "to pptx." org-pandoc-export-to-pptx)
-         ;;(?q "to commonmark." org-pandoc-export-to-commonmark)
-         ;;(?q "to commonmark and open." org-pandoc-export-to-commonmark-and-open)
-         ;;(?Q "as commonmark." org-pandoc-export-as-commonmark)
-         ;;(?r "to rtf." org-pandoc-export-to-rtf)
-         (?r "to rtf and open." org-pandoc-export-to-rtf-and-open)
-         (?R "as rtf." org-pandoc-export-as-rtf)
-         ;;(?s "to s5." org-pandoc-export-to-s5)
-         ;;(?s "to s5 and open." org-pandoc-export-to-s5-and-open)
-         ;;(?S "as s5." org-pandoc-export-as-s5)
-         ;;(?t "to texinfo." org-pandoc-export-to-texinfo)
-         ;;(?t "to texinfo and open." org-pandoc-export-to-texinfo-and-open)
-         ;;(?T "as texinfo." org-pandoc-export-as-texinfo)
-	 ;; (?, "to typst." org-pandoc-export-to-typst)
-         (?, "to typst and open." org-pandoc-export-to-typst-and-open)
-         ;; (?, "as typst." org-pandoc-export-as-typst)
-         ;; (?< "to typst-pdf." org-pandoc-export-to-typst-pdf)
-         (?< "to typst-pdf and open." org-pandoc-export-to-typst-pdf-and-open)
-         ;;(?u "to dokuwiki." org-pandoc-export-to-dokuwiki)
-         ;; (?u "to dokuwiki and open." org-pandoc-export-to-dokuwiki-and-open)
-         ;; (?U "as dokuwiki." org-pandoc-export-as-dokuwiki)
-         ;;(?v "to revealjs." org-pandoc-export-to-revealjs)
-         ;; (?v "to revealjs and open." org-pandoc-export-to-revealjs-and-open)
-         ;; (?V "as revealjs." org-pandoc-export-as-revealjs)
-         ;;(?w "to mediawiki." org-pandoc-export-to-mediawiki)
-         ;; (?w "to mediawiki and open." org-pandoc-export-to-mediawiki-and-open)
-         ;; (?W "as mediawiki." org-pandoc-export-as-mediawiki)
-         (?x "to docx and open." org-pandoc-export-to-docx-and-open)
-         (?X "to docx." org-pandoc-export-to-docx)
-         ;;(?y "to slidy." org-pandoc-export-to-slidy)
-         ;; (?y "to slidy and open." org-pandoc-export-to-slidy-and-open)
-         ;; (?Y "as slidy." org-pandoc-export-as-slidy)
-         ;;(?z "to dzslides." org-pandoc-export-to-dzslides)
-         ;; (?z "to dzslides and open." org-pandoc-export-to-dzslides-and-open)
-         ;; (?Z "as dzslides." org-pandoc-export-as-dzslides)
-         ;;(?{ "to muse." org-pandoc-export-to-muse)
-         ;;(?{ "to muse and open." org-pandoc-export-to-muse-and-open)
-         ;;(?[ "as muse." org-pandoc-export-as-muse)
-         ;;(?} "to zimwiki." org-pandoc-export-to-zimwiki)
-         ;;(?} "to zimwiki and open." org-pandoc-export-to-zimwiki-and-open)
-         ;;(?] "as zimwiki." org-pandoc-export-as-zimwiki)
-         ;;(?~ "to haddock." org-pandoc-export-to-haddock)
-         ;;(?~ "to haddock and open." org-pandoc-export-to-haddock-and-open)
-         ;;(?^ "as haddock." org-pandoc-export-as-haddock)
-         ))
 (plist-put org-format-latex-options :background "Transparent")
 
 
@@ -424,6 +542,21 @@
                  "\\documentclass{tufte-handout}"
                  ("\\section{%s}" . "\\section*{%s}")
                  ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+  (add-to-list 'org-latex-classes
+               '("koma-article"
+                 "\\documentclass[letterpaper]{scrartcl}"
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+  (add-to-list 'org-latex-classes
+               '("twocolumn"
+                 "\\documentclass[letterpaper, twocolumn]{scrartcl "
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
                  ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
                  ("\\paragraph{%s}" . "\\paragraph*{%s}")
                  ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
@@ -434,15 +567,28 @@
       :n "gj" #'evil-next-visual-line
       :n "gk" #'evil-previous-visual-line
       :nv "zD" #'org-fold-hide-drawer-all
-      :nv "zq" #'org-fold-hide-block-all)
+      :nv "zq" #'org-fold-hide-block-all
+      :leader "tn" #'org-num-mode)
+
+
 (setq! evil-snipe-scope 'whole-buffer)
 
 ;;; Evil
-;;;; Modes that evil is disabled
+;; Normally evil doens't respect visual-line-mode. Hopefully this fixes it??
+(after! evil
+  (setq evil-respect-visual-line-mode nil)) ; TODO apparently this has to do with commands like $ and _. Do i want it??
+(map!
+ :nv "j" #'evil-next-visual-line
+ :nv "k" #'evil-previous-visual-line)
+
+;;;; evil-scroll
+(after! evil
+  (setq! evil-scroll-count 20))
 ;;;; Bindings
 (map! :map evil-window-map
       :g "O" #'delete-other-windows)
-
+(map! :leader
+      "t q" #'olivetti-mode)
 ;;; Denote
 ;; Remember that the website version of this manual shows the latest
 ;; developments, which may not be available in the package you are
@@ -451,7 +597,6 @@
 ;;
 ;;     (info "(denote) Sample configuration")
 (use-package denote
-  :ensure t
   :hook
   ( ;; If you use Markdown or plain text files, then you want to make
    ;; the Denote links clickable (Org renders links as buttons right
@@ -507,3 +652,52 @@
 
   ;; Automatically rename Denote buffers using the `denote-rename-buffer-format'.
   (denote-rename-buffer-mode 1))
+
+(map! :leader
+      (:prefix ("d" . "Denote")
+       :nv     "n" #'denote
+       :nv     "d" #'denote-dired
+       :nv     "g" #'denote-grep
+                                        ; If you intend to use Denote with a variety of file types, it is
+                                        ; easier to bind the link-related commands to the `global-map', as
+                                        ; shown here. Otherwise follow the same pattern for `org-mode-map',
+                                        ; `markdown-mode-map', and/or `text-mode-map'.
+       :nv     "l" #'denote-link
+       :nv     "L" #'denote-add-links
+       :nv     "b" #'denote-backlinks
+       :nv     "q c" #'denote-query-contents-link ; create link that triggers a grep
+       :nv     "q f" #'denote-query-filenames-link ; create link that triggers a dired
+                                        ; Note that `denote-rename-file' can work from any context, not just
+                                        ; Dired bufffers#' That is why we bind it here to the `global-map'.
+       :nv     "r" #'denote-rename-file
+       :nv     "R" #'denote-rename-file-using-front-matter))
+;;; Roam
+(after! org-roam
+  (setq! org-roam-directory "~/sync/misc/Roam/"))
+;;; typst-ts
+(use-package! typst-ts-mode
+  :mode "\\.typ\\'"
+  :hook (typst-ts-mode . eglot-ensure)
+  :init (setq
+         typst-ts-watch-options "--open"
+         typst-ts-mode-grammar-location (expand-file-name "tree-sitter/libtree-sitter-typst.so" user-emacs-directory)
+         typst-ts-mode-enable-raw-blocks-highlight t)
+  :config
+  (map! :map typst-ts-mode-map
+        :nv "]]" #'outline-next-heading
+        :nv "[[" #'outline-previous-heading)
+  (keymap-set typst-ts-mode-map "C-c C-c" #'typst-ts-tmenu))
+
+(with-eval-after-load 'eglot
+  (with-eval-after-load 'typst-ts-mode
+    (add-to-list 'eglot-server-programs
+                 `((typst-ts-mode) .
+                   ,(eglot-alternatives `(,typst-ts-lsp-download-path
+                                          "tinymist"
+                                          "typst-lsp"))))))
+
+;;; mu4e
+(use-package! mu4e
+  :config
+  (setq +mu4e-gmail-accounts '(("jamesipogue@gmail.com" . "/jamesipogue")
+                               ("drpagogostick@gmail.com" . "/drpagogostick"))))

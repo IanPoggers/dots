@@ -186,12 +186,12 @@
        ;;ocaml             ; an objective camel
        (org               ; organize your plain life in plain text
         +noter
+        +roam2 ; TODO DO i want this or denote or both??
         +pomodoro
         +dragndrop
         +gnuplot
         +pandoc
         +journal)
-       ;;+pretty
 
        ;;php               ; perl's insecure younger brother
        ;;plantuml          ; diagrams for confusing people more
@@ -226,7 +226,7 @@
        ;;zig               ; C, but simpler
 
        :email
-       ;;(mu4e +org +gmail)
+       (mu4e +org +gmail)
        ;;notmuch
        ;;(wanderlust +gmail)
 
@@ -240,5 +240,4 @@
        :config
        ;;literate
        (default
-        +bindings
-        +smartparens))
+        +bindings))

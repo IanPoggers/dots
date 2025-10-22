@@ -45,8 +45,8 @@ input {
     touchpad {
         // off
         tap
-        // dwt
-        // dwtp
+        dwt // disable while typing
+        // dwtp // disable while track-pointing..
         drag true
         // drag-lock
         //natural-scroll
@@ -68,7 +68,7 @@ input {
         // off
         // natural-scroll
         accel-speed 1.0
-        accel-profile "adaptive" // "flat" or "adaptive"
+        accel-profile "flat" // "flat" or "adaptive"
         // scroll-method "on-button-down"
         // scroll-button 273
         // scroll-button-lock
@@ -80,7 +80,7 @@ input {
 
     // Focus windows and outputs automatically when moving the mouse into them.
     // Setting max-scroll-amount="0%" makes it work only on windows already fully on screen.
-    focus-follows-mouse // max-scroll-amount="0%"
+    //focus-follows-mouse // max-scroll-amount="0%"
 }
 
 // You can configure outputs by their name, which you can find
@@ -178,7 +178,7 @@ layout {
         //off
 
         // How many logical pixels the ring extends out from the windows.
-        width 2
+        width 3
 
         // Colors can be set in a variety of ways:
         // - CSS named colors: "red"
@@ -186,7 +186,7 @@ layout {
         // - CSS-like notation: "rgb(255, 127, 0)", rgba(), hsl() and a few others.
 
         // Color of the ring on the active monitor.
-        active-color "#7fc8ff"
+        active-color "rgb(245,107,0)"
 
         // Color of the ring on inactive monitors.
         //
@@ -216,7 +216,7 @@ layout {
         // If you enable the border, you probably want to disable the focus ring.
 
         width 2
-        active-color "#7fc8ff"
+        active-color "#bf733f"
         inactive-color "#829799"
 
         // Color of the border around windows that request your attention.
@@ -378,12 +378,15 @@ binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
     // Suggested binds for running programs: terminal, app launcher, screen locker.
-    Mod+T hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
-    Mod+E hotkey-overlay-title="Open Emacsclient" { spawn-sh "emacsclient -c"; } 
+    Mod+T hotkey-overlay-title="Open a Terminal: alacritty" { spawn "alacritty"; }
+    Mod+Return hotkey-overlay-title="Open a Terminal: alacritty" { spawn "alacritty"; }
+    Mod+E hotkey-overlay-title="Open Emacsclient" { spawn-sh "emacsclient -c -a ''"; } 
     // TODO why no work
     Mod+S hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
     Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
     Mod+X hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
+    Mod+B hotkey-overlay-title="Run web browser: firefox" { spawn "firefox"; }
+    Mod+Apostrophe hotkey-overlay-title="Run web browser: firefox" { spawn "firefox"; }
 
     // Use spawn to run a shell command. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.
@@ -393,8 +396,8 @@ binds {
     // Example volume keys mappings for PipeWire & WirePlumber.
     // The allow-when-locked=true property makes them work even when the session is locked.
     // Using spawn allows to pass multiple arguments together with the command.
-    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"; }
-    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"; }
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.025+"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.025-"; }
     XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
     XF86AudioMicMute     allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
 
@@ -408,7 +411,6 @@ binds {
     // You can also move the mouse into the top-left hot corner,
     // or do a four-finger swipe up on a touchpad.
     Mod+O repeat=false { toggle-overview; }
-    Mod+Space repeat=false { toggle-overview; }
 
     Mod+Q repeat=false { close-window; }
 
@@ -426,6 +428,9 @@ binds {
     Mod+K     { focus-window-or-workspace-up; }
     Mod+Shift+J     { move-window-down-or-to-workspace-down; }
     Mod+Shift+K     { move-window-up-or-to-workspace-up; }
+    Mod+Shift+D     { move-window-down-or-to-workspace-down; }
+    Mod+Shift+I     { move-window-down-or-to-workspace-down; }
+    Mod+Shift+U     { move-window-up-or-to-workspace-up; }
 
     Mod+Ctrl+Left  { move-column-left; }
     Mod+Ctrl+Down  { move-window-down; }
@@ -452,6 +457,7 @@ binds {
 
     Mod+Page_Down      { focus-workspace-down; }
     Mod+Page_Up        { focus-workspace-up; }
+    Mod+D              { focus-workspace-down; }
     Mod+I              { focus-workspace-down; }
     Mod+U              { focus-workspace-up; }
     Mod+Ctrl+Page_Down { move-column-to-workspace-down; }
@@ -465,8 +471,6 @@ binds {
 
     Mod+Shift+Page_Down { move-workspace-down; }
     Mod+Shift+Page_Up   { move-workspace-up; }
-    Mod+Shift+I         { move-workspace-down; }
-    Mod+Shift+U         { move-workspace-up; }
 
     // You can bind mouse wheel scroll ticks using the following syntax.
     // These binds will change direction based on the natural-scroll setting.
@@ -517,7 +521,6 @@ binds {
     Mod+7 { focus-workspace 7; }
     Mod+8 { focus-workspace 8; }
     Mod+9 { focus-workspace 9; }
-    Mod+D { focus-workspace "vencord"; }
     Mod+Ctrl+1 { move-column-to-workspace 1; }
     Mod+Ctrl+2 { move-column-to-workspace 2; }
     Mod+Ctrl+3 { move-column-to-workspace 3; }
@@ -551,7 +554,7 @@ binds {
     // Mod+R { switch-preset-column-width-back; }
     Mod+Shift+R { switch-preset-window-height; }
     Mod+Ctrl+R { reset-window-height; }
-    Mod+F { maximize-column ; }
+    Mod+F { set-column-width "95%" ; }
     Mod+Shift+F { fullscreen-window; }
 
     // Expand the focused column to space not taken up by other fully visible columns.
@@ -561,6 +564,7 @@ binds {
     Mod+C { center-column; }
     //Mod+Space { center-column; }
     Mod+M { center-column; }
+    Mod+Space { center-column; }
 
     // Center all fully visible columns on screen.
     Mod+Shift+C { center-visible-columns; }
@@ -635,7 +639,7 @@ gestures {
     }
 
     hot-corners {
-        // off
+        off
         // top-right
         // bottom-left
         // bottom-right
@@ -643,5 +647,5 @@ gestures {
 }
 
 overview {
-    zoom 0.6
+    zoom 0.4
 }

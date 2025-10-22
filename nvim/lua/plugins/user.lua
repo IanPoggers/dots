@@ -4,14 +4,30 @@
 
 ---@type LazySpec
 return {
-
-  -- == Examples of Adding Plugins ==
-
-  "andweeb/presence.nvim",
   {
-    "ray-x/lsp_signature.nvim",
-    event = "BufRead",
-    config = function() require("lsp_signature").setup() end,
+    "chomosuke/typst-preview.nvim",
+    opts = function(_, opts)
+      opts.open_cmd = 'chromium --app="%s"'
+      opts.invert_colors = "auto"
+      return opts
+    end,
+  },
+
+  {
+    "kaarmu/typst.vim",
+    config = function()
+      vim.g.typst_conceal = 1
+      vim.g.typst_folding = 1
+    end,
+  },
+
+  {
+    "andweeb/presence.nvim",
+    {
+      "ray-x/lsp_signature.nvim",
+      event = "BufRead",
+      config = function() require("lsp_signature").setup() end,
+    },
   },
 
   {
