@@ -23,8 +23,9 @@ input {
             // layout "us,ru"
             // options "grp:win_space_toggle,compose:ralt,ctrl:nocaps"
             layout "us"
-            options "altwin:swap_alt_win"
+            options "altwin:swap_alt_win,caps:backspace"
             variant "colemak"
+
 
             // If this section is empty, niri will fetch xkb settings
             // from org.freedesktop.locale1. You can control these using
@@ -51,6 +52,7 @@ input {
         // drag-lock
         //natural-scroll
         accel-speed 0.50
+        scroll-factor 0.4
         // accel-profile "flat"
         // scroll-method "two-finger"
         // disabled-on-external-mouse
@@ -386,7 +388,8 @@ binds {
     Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
     Mod+X hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
     Mod+B hotkey-overlay-title="Run web browser: firefox" { spawn "firefox"; }
-    Mod+Apostrophe hotkey-overlay-title="Run web browser: firefox" { spawn "firefox"; }
+    Mod+Y hotkey-overlay-title="Do calculations" { spawn-sh "rofi -show calc"; }
+    Mod+Apostrophe hotkey-overlay-title="Open Emacsclient" { spawn-sh "emacsclient -c -a ''"; } 
 
     // Use spawn to run a shell command. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.
@@ -424,10 +427,10 @@ binds {
     Mod+L { focus-column-right; }
     Mod+Shift+H  { move-column-left; }
     Mod+Shift+L { move-column-right; }
-    Mod+J     { focus-window-or-workspace-down; }
-    Mod+K     { focus-window-or-workspace-up; }
-    Mod+Shift+J     { move-window-down-or-to-workspace-down; }
-    Mod+Shift+K     { move-window-up-or-to-workspace-up; }
+    Mod+J     { focus-window-down; }
+    Mod+K     { focus-window-up; }
+    Mod+Shift+J     { move-window-down; }
+    Mod+Shift+K     { move-window-up; }
     Mod+Shift+D     { move-window-down-or-to-workspace-down; }
     Mod+Shift+I     { move-window-down-or-to-workspace-down; }
     Mod+Shift+U     { move-window-up-or-to-workspace-up; }
@@ -561,7 +564,6 @@ binds {
     // Makes the column "fill the rest of the space".
     Mod+Ctrl+F { expand-column-to-available-width; }
 
-    Mod+C { center-column; }
     //Mod+Space { center-column; }
     Mod+M { center-column; }
     Mod+Space { center-column; }

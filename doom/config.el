@@ -1,10 +1,13 @@
-;;; config.el -*- lexical-binding: t; -*-
+;;; config.el -*- lexical-binding: t; eval: (outline-hide-subtree) -*-
 
 ;;; General Emacs
 (global-auto-revert-mode 1)
 (smartparens-global-mode -1)
 (setq-default search-invisible nil)
 (after! smartparens (setq smartparens-global-mode nil))
+
+;; Make initial major mode org-mode (for scratch buffer)
+(setq! doom-scratch-initial-major-mode 'org-mode)
 
 (setq! global-auto-revert-non-file-buffers t
        auto-revert-verbose nil)
@@ -65,7 +68,7 @@
      'face 'doom-dashboard-banner)))
 
 (setq +doom-dashboard-ascii-banner-fn #'my-weebery-is-always-greater)
-(setq! user-full-name "Ian Pogue"
+(setq! user-full-name "James Ian Pogue"
        user-mail-address "jamesipogue@gmail.com")
 
 ;; Doom exposes five (optional) variables for controlling fonts in Doom:
@@ -90,14 +93,14 @@
 (setq! doom-theme 'doom-nord)
 
 (after! org
- (after! org-indent
-  (set-face-attribute 'org-block nil            :foreground nil :inherit 'fixed-pitch :height 0.85)
-  (set-face-attribute 'org-code nil             :inherit '(shadow fixed-pitch) :height 0.85)
-  (set-face-attribute 'org-indent nil           :inherit '(org-hide fixed-pitch) :height 0.85)
-  (set-face-attribute 'org-verbatim nil         :inherit '(shadow fixed-pitch) :height 0.85)
-  (set-face-attribute 'org-special-keyword nil  :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-meta-line nil        :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-checkbox nil         :inherit 'fixed-pitch)))
+  (after! org-indent
+    (set-face-attribute 'org-block nil            :foreground nil :inherit 'fixed-pitch :height 0.85)
+    (set-face-attribute 'org-code nil             :inherit '(shadow fixed-pitch) :height 0.85)
+    (set-face-attribute 'org-indent nil           :inherit '(org-hide fixed-pitch) :height 0.85)
+    (set-face-attribute 'org-verbatim nil         :inherit '(shadow fixed-pitch) :height 0.85)
+    (set-face-attribute 'org-special-keyword nil  :inherit '(font-lock-comment-face fixed-pitch))
+    (set-face-attribute 'org-meta-line nil        :inherit '(font-lock-comment-face fixed-pitch))
+    (set-face-attribute 'org-checkbox nil         :inherit 'fixed-pitch)))
 
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
@@ -113,7 +116,7 @@
 
 (global-visual-line-mode 1)
 
-(setq! fill-column 85)
+(setq! fill-column 80)
 
 
 ;;(add-hook! 'visual-line-mode-hook
@@ -122,7 +125,7 @@
 (use-package! mixed-pitch
   :hook (text-mode . mixed-pitch-mode))
 
-(setq! fill-column 85)
+(setq! fill-column 80)
 
 ;;;; whisper.el
 (use-package! whisper
@@ -141,11 +144,22 @@
 (defun my-open-calendar ()
   (interactive)
   (cfw:open-calendar-buffer
+   :view 'two-weeks
    :contents-sources
    (list
     (cfw:org-create-source "light blue")  ; org-agenda source
+    (cfw:ical-create-source "gcal" "https://calendar.google.com/calendar/ical/jamesipogue%40gmail.com/private-405fed4d44887c1fb303de8d0e6c7a0d/basic.ics" "IndianRed") ; google calendar ICS
     (cfw:ical-create-source "canvas" "https://bc.instructure.com/feeds/calendars/user_lAcbipQjOdEkynqm9tpSh6WgdZPIv89v8qusdQIF.ics" "Orange")))) ; google calendar ICS
 
+(defun my-minimal-calendar ()
+  (interactive)
+  (cfw:open-calendar-buffer
+   :view 'two-weeks
+   :contents-sources
+   (list
+    (cfw:org-create-source "light blue")  ; org-agenda source
+    (cfw:ical-create-source "gcal" "https://calendar.google.com/calendar/ical/jamesipogue%40gmail.com/private-405fed4d44887c1fb303de8d0e6c7a0d/basic.ics" "IndianRed")))
+  (cfw:change-view-two-weeks)) ; google calendar ICS
 
 (map! :leader
       (:prefix ("o" . "open")
@@ -153,12 +167,16 @@
 
 (map! :leader
       (:prefix ("o" . "open")
-       :desc "Calendar" "c" #'+calendar/open-calendar))
+       :desc "Calendar" "c" #'my-minimal-calendar))
+;; Add an org-capture template
+(setq! cfw:org-capture-template
+       '("c" "calfw2org" entry (file "cal.org")  "* %?
+ %(cfw:org-capture-day)"))
 
 ;;; Org
 (setq! org-directory "~/org/"
        org-roam-directory "~/doc/roam/"
-       org-archive-location "~/org/archive/%s_archive::")
+       org-archive-location "~/org/.archive/%s_archive::")
 
 (after! org
   (setq
@@ -166,6 +184,9 @@
    org-export-initial-scope 'subtree
    org-pretty-entities t
    org-pretty-entities-include-sub-superscripts t
+   org-todo-keywords '((sequence "TODO(t)"  "NEXT(n)""|" "DONE(d)" "KILL(k)")
+                       (sequence "TOREAD(r)" "READING(g)" "|" "READ(R)")
+                       (sequence "[ ](T)" "[-](S)" "[?](W)" "|" "[X](x)"))
    org-use-sub-superscripts t
    org-export-with-section-numbers nil
    org-export-with-toc nil
@@ -186,7 +207,6 @@
 
   (add-hook 'org-mode-hook (lambda ()
                              (setq
-                              org-startup-folded 'fold
                               org-hide-drawer-startup t
                               org-cycle-hide-drawer-startup t
                               display-line-numbers-type 'visual
@@ -194,27 +214,30 @@
                               org-hide-leading-stars t)
                              (org-num-mode -1)
                              (cdlatex-mode -1)
+
+                             (dolist (face '((org-level-1 . 1.30)
+                                             (org-level-2 . 1.25)
+                                             (org-level-3 . 1.2)
+                                             (org-level-4 . 1.1)
+                                             (org-level-5 . 1.1)
+                                             (org-level-6 . 1.1)
+                                             (org-level-7 . 1.1)
+                                             (org-level-8 . 1.1)))
+                               (set-face-attribute (car face) nil :font "Atkinson Hyperlegible" :weight 'semibold :height (cdr face)))
+
+                             ;; Make the document title a bit bigger
+                             (set-face-attribute 'org-document-title nil :font "Atkinson Hyperlegible" :weight
+                                                 'semibold :height 1.8)
+
                              (ultra-scroll-mode -1)
                              (org-modern-mode -1)
                              (org-superstar-mode 1)
                              (org-latex-preview-center-mode 1)
-                             (olivetti-mode 1)
+                             (visual-line-mode 1)
                              ;;(visual-fill-column-mode 1)
-                             (org-cdlatex-mode -1)))
-  ;; Resize Org headings
-  (dolist (face '((org-level-1 . 1.30)
-                  (org-level-2 . 1.25)
-                  (org-level-3 . 1.2)
-                  (org-level-4 . 1.1)
-                  (org-level-5 . 1.1)
-                  (org-level-6 . 1.1)
-                  (org-level-7 . 1.1)
-                  (org-level-8 . 1.1)))
-    (set-face-attribute (car face) nil :font "Atkinson Hyperlegible" :weight 'semibold :height (cdr face)))
+                             (org-cdlatex-mode -1))))
+;; Resize Org headings
 
-  ;; Make the document title a bit bigger
-  (set-face-attribute 'org-document-title nil :font "Atkinson Hyperlegible" :weight
-                      'semibold :height 1.8))
 
 (map! :leader "n/" #'consult-org-agenda)
 
@@ -225,12 +248,20 @@
   (setq org-superstar-special-todo-items t) ;; Makes TODO header bullets into boxes
   (setq org-superstar-todo-bullet-alist '(("TODO" . 9744)
                                           ("DONE" . 9744)
-                                          ("READ" . 9744)
-                                          ("IDEA" . 9744)
-                                          ("WAITING" . 9744)
-                                          ("CANCELLED" . 9744)
-                                          ("PROJECT" . 9744)
-                                          ("POSTPONED" . 9744))))
+                                          ("NEXT" . 9744)
+                                          ("WAIT" . 9744)
+                                          ("READING" . 9744)
+                                          ("TOREAD" . 9744)
+                                          ("WAIT" . 9744))))
+
+
+;;;; org-alert
+(use-package! org-alert
+  :config
+  (setq org-alert-interval 300
+        org-alert-notify-cutoff 10
+        org-alert-notify-after-event-cutoff 10)
+  (org-alert-enable))
 
 
 ;;;; +dragndrop
@@ -243,14 +274,21 @@
         :desc "Rename image at point" "a C" #'org-download-rename-at-point)
   :config
   (setq org-download-method 'directory
+        org-download-image-latex-width 0
         org-download-link-format "[[file:images/%s]]\n"
         org-download-heading-lvl nil))
 ;;;; org-latex
 (after! org
-  (setq org-latex-image-default-width "0.65\\linewidth"
-        org-latex-default-class "article"))
+  (setq org-latex-image-default-width "\\linewidth"
+        org-latex-default-figure-position "H"
+        org-latex-precompile nil
+        org-latex-default-class "article")
+
+  (dolist (pkg '("amsmath" "amssymb" "amsthm" "mathtools" "mathrsfs" "pgfplots" "float"))
+    (add-to-list 'org-latex-packages-alist `("" ,pkg t))))
 ;;;; org-modern
 (after! org-modern
+  (add-hook! 'org-agenda-finalize-hook #'org-modern-agenda)
   (setq!
    org-modern-checkbox nil
    org-modern-keyword nil))
@@ -271,9 +309,7 @@
   :init
   (setq org-startup-with-latex-preview t)
 
-  (after! org
-    (dolist (pkg '("amsmath" "amssymb" "mathtools" "mathrsfs" "pgfplots"))
-      (add-to-list 'org-latex-packages-alist `("" ,pkg t))))
+
 
   :config
   (plist-put org-latex-preview-appearance-options
@@ -284,7 +320,10 @@
   (plist-put org-latex-preview-appearance-options
              :zoom 1.1)
 
+  (setq org-latex-preview-preamble "\\documentclass{article}\n[DEFAULT-PACKAGES]\n[PACKAGES]\n\\usepackage{xcolor}\\newtheorem{theorem}{Theorem}")
+
   (setq         org-latex-preview-numbered t
+                org-latex-preview-process-precompile nil
                 org-latex-preview-mode-display-live t
                 org-latex-preview-process-alist '((dvipng :programs ("latex" "dvipng") :description "dvi > png" :message
                                                    "you need to install the programs: latex and dvipng." :image-input-type
@@ -374,11 +413,11 @@
 (after! org
   (setq org-capture-templates
         '(("t" "Personal todo" entry (file+headline +org-capture-todo-file "Inbox")
-           "* [ ] %?\n%i\n%a" :prepend t)
+           "* TODO %?\n%i\n" :prepend t)
+          ("T" "Linked todo" entry (file+headline +org-capture-todo-file "Inbox")
+           "* TODO %?\n%i\n%a" :prepend t)
           ("n" "Personal notes" entry (file+headline +org-capture-notes-file "Inbox")
-           "* %u %?\n%i\n%a" :prepend t)
-          ("j" "Journal" entry (file+olp+datetree +org-capture-journal-file) "* %U %?\n%i\n%a"
-           :prepend t)
+           "* %?\n%i\n" :prepend t)
           ("p" "Templates for projects")
           ("pt" "Project-local todo" entry
            (file+headline +org-capture-project-todo-file "Inbox") "* TODO %?\n%i\n%a" :prepend
@@ -396,16 +435,26 @@
            "* %U %?\n %i\n %a" :heading "Notes" :prepend t)
           ("oc" "Project changelog" entry #'+org-capture-central-project-changelog-file
            "* %U %?\n %i\n %a" :heading "Changelog" :prepend t)
-          ("c" "Templates for classes"))))
+          ("c" "Templates for classes")
+          ("cc" "Calc Inbox" entry (file+headline "Calc2.org" "Inbox")
+           "* %?\n%i\n" :prepend t)
+          ("cC" "Calc Todo" entry (file+headline "Calc2.org" "Inbox")
+           "* TODO %?\n%i\n" :prepend t)
+          ("cp" "Physics Inbox" entry (file+headline "Phys3.org" "Inbox")
+           "* %?\n%i\n" :prepend t)
+          ("cP" "Physics Inbox" entry (file+headline "Phys3.org" "Inbox")
+           "* TODO %?\n%i\n" :prepend t))))
+
 ;;;; Journal
 (after! org-journal
   (setq
-   org-journal-file-format "%Y"
+   org-journal-file-format "%Y.org"
+   org-journal-time-format "%R "
    org-journal-dir "~/org/journal/"
    org-journal-file-type 'yearly))
 
 (map! :leader "njo" (lambda () (interactive) (org-journal-open-current-journal-file) (read-only-mode))
-      :leader "oj" (lambda () (interactive) (org-journal-open-current-journal-file) (read-only-mode)))
+      :leader "j" (lambda () (interactive) (org-journal-open-current-journal-file) (read-only-mode)))
 ;;;; zotero
 (defun my-org-zotero-open (path _)
   (call-process "xdg-open" nil nil nil (concat "zotero:" path)))
@@ -442,7 +491,7 @@
 ;;
 ;;(setq! zotxt-default-bibliography-style "chicago-notes-bibliography")
 
-;;;; Agenda
+;;;; org-agenda
 (add-to-list 'display-buffer-alist
              '("\\*Org Agenda\\*"
                (display-buffer-in-side-window)
@@ -452,40 +501,100 @@
                (slot . 0)
                (window-parameters . ((no-delete-other-windows . t)))))
 
+(map! :nv "G"
+      (lambda ()
+        (interactive)
+        (evil-goto-line)
+        (evil-scroll-line-to-bottom-first-non-blank nil)))
 
 ;; Hide some tags such as ATTATCH
+(evil-set-initial-state 'org-agenda-mode 'emacs)
 (after! org-agenda
+  (evil-set-initial-state 'org-agenda-mode 'emacs)
   (custom-set-faces!
-    '(org-agenda-date-today :underline t :box t))
+    '(org-agenda-date-today :foreground "goldenrod3" :inverse t :height 1.1 :underline t :box t)
+    '(org-agenda-date  :foreground "white" :box t)
+    '(org-agenda-date-weekend :foreground "grey68" :box t))
   (setq org-agenda-hide-tags-regexp (concat org-agenda-hide-tags-regexp "\\|ATTACH")
-        org-agenda-files (append org-agenda-files '("~/org/" "~/org/journal/" "~/doc/notes/"))
+        org-agenda-files (append org-agenda-files '("~/org/" "~/org/journal/"))
         org-agenda-follow-indirect nil ;; TODO What's the best value for this to not be confusing
         org-agenda-skip-scheduled-if-done t
+        org-agenda-skip-scheduled-delay-if-deadline t
+        org-agenda-skip-deadline-prewarning-if-scheduled t
+        org-agenda-span 7
+        org-agenda-sorting-strategy
+        '((agenda habit-down time-up category-keep urgency-down)
+          (todo urgency-down category-keep) (tags urgency-down category-keep)
+          (search category-keep))
+        org-priority-default  66
+        org-agenda-start-on-weekday 1
+        org-agenda-start-day nil
         org-agenda-window-setup 'current-window
+        org-deadline-warning-days 0 ;; TODO Change once i stop using so many deadlines
+        org-agenda-todo-list-sublevels nil
         org-agenda-window-frame-fractions '(0.5 . 0.8)
         org-agenda-skip-deadline-if-done t
         org-startup-shrink-all-tables t
         org-agenda-start-with-follow-mode nil)
 
   (setq org-agenda-custom-commands
-        '(("n" "Agenda and all TODOs" ((agenda "") (alltodo "")))
+        '(("s" "Super Agenda" agenda ""
+           ((org-agenda-time-grid
+             '((daily require-timed) (800 1000 1200 1400 1600 1800 2000 2200) "......" "----------------"))
+            (org-super-agenda-groups
+             '((:name "" :time-grid t)
+               (:name "Class" :tag "class")
+               (:name "Habits" :habit t)))))
+          ("d" "Daily Super Agenda" agenda ""
+           ((org-agenda-span 1)
+            (org-agenda-time-grid
+             '((daily require-timed) (800 1000 1200 1400 1600 1800 2000 2200) "......" "----------------"))
+            (org-super-agenda-groups
+             '((:name "" :time-grid t)
+               (:name "Class" :tag "class")
+               (:name "Habit" :habit t)))))
+          ("n" "Agenda and all TODOs" ((agenda "") (alltodo "")))
           ("u" "Unscheduled TODOs"
            todo ""
            ((org-agenda-skip-function
              '(org-agenda-skip-entry-if 'scheduled 'deadline))
-            (org-agenda-overriding-header "Unscheduled TODOs")))))
+            (org-agenda-overriding-header "Unscheduled TODOs")))
+          ("r" "Reading & To-Read" ((todo "TOREAD") (todo "READING")))
+          ("c" "Classes" agenda ""
+           (;(org-super-agenda-groups '(())) TODO
+            (org-agenda-tag-filter-preset '("+class"))))
+          ("p" "Personal" agenda "" ((org-agenda-tag-filter-preset '("-class"))))))
+
 
 
   (set-popup-rule! "^\\*Org Agenda" :ignore t)
   (setq org-agenda-window-setup 'current-window))
 
+
 (add-hook! 'org-agenda-mode-hook :append
+  (visual-line-mode -1)
   (setq org-agenda-prefix-format
         '((agenda . " %i %-12:c%?-12t% s")
           (todo . " %i %-12:c")
           (tags . " %i %-12:c")
           (search . " %i %-12:c"))))
 
+(defun my/org-agenda-adjust-text-size ()
+  (if (= text-scale-mode-amount 0)
+      (text-scale-set -0.8)))
+
+(add-hook! 'org-agenda-finalize-hook #'my/org-agenda-adjust-text-size)
+
+;;;;; org-super-agenda
+(after! evil-org-agenda
+  (use-package! org-super-agenda
+    :after (evil evil-org)
+    :init (org-super-agenda-mode 1)
+    :config
+    (set-face-attribute 'org-super-agenda-header nil :underline t )
+    (setq org-super-agenda-header-separator ""
+          org-super-agenda-unmatched-name "Other"
+          org-super-agenda-header-prefix " ")))
 
 ;;;; export
 ;;;; ox-*
@@ -554,7 +663,7 @@
                  ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
   (add-to-list 'org-latex-classes
                '("twocolumn"
-                 "\\documentclass[letterpaper, twocolumn]{scrartcl "
+                 "\\documentclass[letterpaper, twocolumn]{scrartcl}"
                  ("\\section{%s}" . "\\section*{%s}")
                  ("\\subsection{%s}" . "\\subsection*{%s}")
                  ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
@@ -571,8 +680,18 @@
       :leader "tn" #'org-num-mode)
 
 
+
 (setq! evil-snipe-scope 'whole-buffer)
 
+(map! :map 'override
+      :leader
+      "'" #'org-agenda
+      "nf" '(lambda ()
+              (interactive)
+              (consult-find org-directory (cons " org" 0)))
+      "nF" #'+default/find-in-notes
+      "x" #'org-capture
+      "X" #'doom/open-scratch-buffer)
 ;;; Evil
 ;; Normally evil doens't respect visual-line-mode. Hopefully this fixes it??
 (after! evil
@@ -585,10 +704,11 @@
 (after! evil
   (setq! evil-scroll-count 20))
 ;;;; Bindings
+(map! :v "zn" #'doom/narrow-buffer-indirectly)
 (map! :map evil-window-map
       :g "O" #'delete-other-windows)
 (map! :leader
-      "t q" #'olivetti-mode)
+      "tq" #'olivetti-mode)
 ;;; Denote
 ;; Remember that the website version of this manual shows the latest
 ;; developments, which may not be available in the package you are
@@ -701,3 +821,12 @@
   :config
   (setq +mu4e-gmail-accounts '(("jamesipogue@gmail.com" . "/jamesipogue")
                                ("drpagogostick@gmail.com" . "/drpagogostick"))))
+;;; ticktick.el
+(use-package! ticktick
+  :config (setq ticktick-client-id "your-client-id"
+                ticktick-sync-file "~/org/ticktick.org"
+                ticktick-client-secret "your-client-secret"))
+
+;;; Olivetti mode
+(after! olivetti-mode
+  (setq olivetti-body-width 80))

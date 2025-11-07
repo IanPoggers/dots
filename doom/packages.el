@@ -105,3 +105,6 @@
 (package! whisper
   :recipe (:host github :repo "natrys/whisper.el"))
 (package! olivetti)
+(package! org-alert)
+(package! org-super-agenda)
+(package! ticktick)
