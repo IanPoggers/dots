@@ -816,11 +816,6 @@
                                           "tinymist"
                                           "typst-lsp"))))))
 
-;;; mu4e
-(use-package! mu4e
-  :config
-  (setq +mu4e-gmail-accounts '(("jamesipogue@gmail.com" . "/jamesipogue")
-                               ("drpagogostick@gmail.com" . "/drpagogostick"))))
 ;;; ticktick.el
 (use-package! ticktick
   :config (setq ticktick-client-id "your-client-id"
