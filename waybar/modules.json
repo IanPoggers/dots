@@ -109,9 +109,9 @@
     "states": {
       "full": 100,
       "notfull": 99,
-      "warning": 20,
-      "critical": 10,
-      "plugordie": 5
+      "warning": 25,
+      "critical": 15,
+      "plugordie": 7,
     },
     "format-charging": "bat: {capacity}% chg",
     "format-full": "bat: {capacity}% full",

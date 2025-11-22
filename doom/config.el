@@ -1,10 +1,11 @@
-;;; config.el -*- lexical-binding: t; eval: (outline-hide-subtree) -*-
+;;; config.el -*- lexical-binding: t; eval: (+fold/close-all) -*-
 
 ;;; General Emacs
 (global-auto-revert-mode 1)
 (smartparens-global-mode -1)
 (setq-default search-invisible nil)
 (after! smartparens (setq smartparens-global-mode nil))
+
 
 ;; Make initial major mode org-mode (for scratch buffer)
 (setq! doom-scratch-initial-major-mode 'org-mode)
@@ -18,6 +19,10 @@
  :nv "gk" #'outline-backward-same-level
  :nv "zu" #'outline-up-heading
  :nv "gj" #'outline-forward-same-level)
+;;;; lookup provider
+(add-to-list '+lookup-provider-url-alist '("Goodreads" "https://www.goodreads.com/search?q=%s"))
+(add-to-list '+lookup-provider-url-alist '("Story Graph" "https://app.thestorygraph.com/browse?search_term=%s"))
+(add-to-list '+lookup-provider-url-alist '("Anna's Archive" "https://annas-archive.org/search?q=%s"))
 ;;;; Relative line numbers
 (after! display-line-numbers
   (setq display-line-numbers-type 'visual))
@@ -30,7 +35,7 @@
 (map! :g  "<f5>" 'revert-buffer)
 
 (after! which-key
-  (setq which-key-idle-delay .18))
+  (setq which-key-idle-delay .28))
 
 ;;;; PDF
 (setq! pdf-view-resize-factor 1.1
@@ -115,6 +120,7 @@
 
 
 (global-visual-line-mode 1)
+(global-visual-wrap-prefix-mode 1)
 
 (setq! fill-column 80)
 
@@ -134,17 +140,17 @@
   (setq whisper-model "medium"
         whisper-language "en"
         whisper-translate nil))
-(map!
- :leader "r" #'whisper-run)
 
-;;; Calendar https://github.com/kiwanami/emacs-calfw
-(setq! cfw:render-line-breaker 'cfw:render-line-breaker-wordwrap
+;;; calendar [calfw](https://github.com/kiwanami/emacs-calfw)
+(setq! cfw:render-line-breaker 'cfw:render-line-breaker-none
+       cfw:org-agenda-schedule-args '(:deadline :scheduled*)
+       cfw:org-overwrite-default-keybinding t
        cfw:display-calendar-holidays nil)
 
 (defun my-open-calendar ()
   (interactive)
   (cfw:open-calendar-buffer
-   :view 'two-weeks
+   :view 'day
    :contents-sources
    (list
     (cfw:org-create-source "light blue")  ; org-agenda source
@@ -154,10 +160,11 @@
 (defun my-minimal-calendar ()
   (interactive)
   (cfw:open-calendar-buffer
-   :view 'two-weeks
+   :view 'day
    :contents-sources
    (list
-    (cfw:org-create-source "light blue")  ; org-agenda source
+                                        ;(cfw:org-create-source "light blue")  ; org-agenda source
+    (cfw:ical-create-source "canvas" "https://bc.instructure.com/feeds/calendars/user_lAcbipQjOdEkynqm9tpSh6WgdZPIv89v8qusdQIF.ics" "Orange")
     (cfw:ical-create-source "gcal" "https://calendar.google.com/calendar/ical/jamesipogue%40gmail.com/private-405fed4d44887c1fb303de8d0e6c7a0d/basic.ics" "IndianRed")))
   (cfw:change-view-two-weeks)) ; google calendar ICS
 
@@ -178,13 +185,23 @@
        org-roam-directory "~/doc/roam/"
        org-archive-location "~/org/.archive/%s_archive::")
 
+;; Disable org-element-use-cache in an indirect buffer cuz it seems to break things.
+(add-hook! 'clone-indirect-buffer (lambda ()
+                                    (setq-local org-element-use-cache nil)))
+
 (after! org
   (setq
+   ;;org-indirect-buffer-display 'new-frame ; TODO should this be set to something else?
+   org-display-internal-link-with-indirect-buffer t
+   org-link-use-indirect-buffer-for-internals t ;; why are these two separate variables??
    org-export-with-tags nil
+   org-element-use-cache nil ; TODO how to get this to only apply in indirect buffers
+   org-export-with-todo-keywords nil
    org-export-initial-scope 'subtree
    org-pretty-entities t
+   org-custom-properties '("AUTHOR")
    org-pretty-entities-include-sub-superscripts t
-   org-todo-keywords '((sequence "TODO(t)"  "NEXT(n)""|" "DONE(d)" "KILL(k)")
+   org-todo-keywords '((sequence "TODO(t)"  "NEXT(n)" "WAIT(w)" "SOMEDAY(S)" "|" "DONE(d)" "KILL(k)")
                        (sequence "TOREAD(r)" "READING(g)" "|" "READ(R)")
                        (sequence "[ ](T)" "[-](S)" "[?](W)" "|" "[X](x)"))
    org-use-sub-superscripts t
@@ -194,8 +211,8 @@
    org-hide-drawer-startup t
    org-image-align 'center
    org-startup-with-latex-preview t
-   org-startup-with-inline-images t
-   org-indent-indentation-per-level 1
+   org-startup-with-inline-images nil
+   org-indent-indentation-per-level 0 ;; disable org-indent
    org-cycle-hide-drawer-startup t
    org-cycle-inline-images-display t
    org-image-max-width 440 ; TODO what's the best value for this??
@@ -204,6 +221,12 @@
   (set-face-attribute 'org-quote nil
                       :family "Crimson Pro"
                       :height 1.1)
+  (set-face-attribute 'org-drawer nil
+                      :family "Iosevka Nerd Font Mono"
+                      :height 0.95)
+  (set-face-attribute 'org-property-value nil
+                      :family "Iosevka Nerd Font Mono"
+                      :height 0.95)
 
   (add-hook 'org-mode-hook (lambda ()
                              (setq
@@ -241,6 +264,10 @@
 
 (map! :leader "n/" #'consult-org-agenda)
 
+;;;; org-cdlatex
+(after! org-cdlatex
+  (setq cdlatex-takeover-subsuperscript t
+        cdlatex-simplify-sub-super-scripts t))
 ;;;; org-superstar
 (use-package! org-superstar
   :config
@@ -250,6 +277,7 @@
                                           ("DONE" . 9744)
                                           ("NEXT" . 9744)
                                           ("WAIT" . 9744)
+                                          ("SOMEDAY" . 9744)
                                           ("READING" . 9744)
                                           ("TOREAD" . 9744)
                                           ("WAIT" . 9744))))
@@ -264,7 +292,7 @@
   (org-alert-enable))
 
 
-;;;; +dragndrop
+;;;; org-download
 (use-package! org-download
   :defer t
   :init
@@ -276,6 +304,7 @@
   (setq org-download-method 'directory
         org-download-image-latex-width 0
         org-download-link-format "[[file:images/%s]]\n"
+        org-download-image-attr-list '("#+attr_latex :width 0.65\\linewidth")
         org-download-heading-lvl nil))
 ;;;; org-latex
 (after! org
@@ -405,29 +434,43 @@
   (setq
    org-timeblock-span 7
    org-timeblock-show-future-repeats t))
-;;;; Pomo
+;;;; org-pomodoro and org-clock
 (after! org-pomodoro
   (setq
+   org-clock-sound "~/.config/doom/assets/bell.wav"
+   org-pomodoro-start-sound "~/.config/doom/assets/bell.wav"
+   org-pomodoro-clock-break t
+   org-pomodoro-keep-killed-pomodoro-time t
+   org-pomodoro-short-break-length 10
+   org-pomodoro-manual-break t
+   org-pomodoro-length 30
    org-pomodoro-start-sound-p t))
-;;;; capture TODO
+(after! org-clock
+  (setq org-clock-sound "~/.config/doom/assets/bell.wav"))
+
+(map! :leader
+      "tT" #'org-timer-set-timer)
+;;;; org-capture TODO
 (after! org
   (setq org-capture-templates
         '(("t" "Personal todo" entry (file+headline +org-capture-todo-file "Inbox")
            "* TODO %?\n%i\n" :prepend t)
+          ("h" "Personal habit" entry (file+headline +org-capture-todo-file "Habits")
+           "* TODO %?\n:PROPERTIES:\n:STYLE: habit\n:END:\n%i\n" :prepend t)
           ("T" "Linked todo" entry (file+headline +org-capture-todo-file "Inbox")
            "* TODO %?\n%i\n%a" :prepend t)
           ("n" "Personal notes" entry (file+headline +org-capture-notes-file "Inbox")
            "* %?\n%i\n" :prepend t)
-          ("p" "Templates for projects")
-          ("pt" "Project-local todo" entry
-           (file+headline +org-capture-project-todo-file "Inbox") "* TODO %?\n%i\n%a" :prepend
-           t)
-          ("pn" "Project-local notes" entry
-           (file+headline +org-capture-project-notes-file "Inbox") "* %U %?\n%i\n%a" :prepend
-           t)
-          ("pc" "Project-local changelog" entry
-           (file+headline +org-capture-project-changelog-file "Unreleased") "* %U %?\n%i\n%a"
-           :prepend t)
+                                        ;("p" "Templates for projects")
+                                        ;("pt" "Project-local todo" entry
+                                        ;(file+headline +org-capture-project-todo-file "Inbox") "* TODO %?\n%i\n%a" :prepend
+                                        ;t)
+                                        ;("pn" "Project-local notes" entry
+                                        ;(file+headline +org-capture-project-notes-file "Inbox") "* %U %?\n%i\n%a" :prepend
+                                        ;t)
+                                        ;("pc" "Project-local changelog" entry
+                                        ;(file+headline +org-capture-project-changelog-file "Unreleased") "* %U %?\n%i\n%a"
+                                        ;:prepend t)
           ("o" "Centralized templates for projects")
           ("ot" "Project todo" entry #'+org-capture-central-project-todo-file
            "* TODO %?\n %i\n %a" :heading "Tasks" :prepend nil)
@@ -435,15 +478,17 @@
            "* %U %?\n %i\n %a" :heading "Notes" :prepend t)
           ("oc" "Project changelog" entry #'+org-capture-central-project-changelog-file
            "* %U %?\n %i\n %a" :heading "Changelog" :prepend t)
-          ("c" "Templates for classes")
-          ("cc" "Calc Inbox" entry (file+headline "Calc2.org" "Inbox")
+          ("c" "Calc Inbox" entry (file+headline "Calc2.org" "Inbox")
            "* %?\n%i\n" :prepend t)
-          ("cC" "Calc Todo" entry (file+headline "Calc2.org" "Inbox")
+          ("C" "Calc Todo" entry (file+headline "Calc2.org" "Inbox")
            "* TODO %?\n%i\n" :prepend t)
-          ("cp" "Physics Inbox" entry (file+headline "Phys3.org" "Inbox")
+          ("p" "Physics Inbox" entry (file+headline "Phys3.org" "Inbox")
            "* %?\n%i\n" :prepend t)
-          ("cP" "Physics Inbox" entry (file+headline "Phys3.org" "Inbox")
-           "* TODO %?\n%i\n" :prepend t))))
+          ("P" "Physics Inbox" entry (file+headline "Phys3.org" "Inbox")
+           "* TODO %?\n%i\n" :prepend t)
+          ("r" "Reading Inbox" entry (file+headline "reading.org" "Inbox")
+           "* TOREAD %?\n%^{AUTHOR}p\n%i\n" :prepend t)
+          )))
 
 ;;;; Journal
 (after! org-journal
@@ -475,14 +520,13 @@
   :after org
   :config
   (setq org-noter-hide-other t
-        org-noter-max-short-selected-text-length nil ;; Determines how long until it substitutes with 'notes for..'
+        org-noter-max-short-selected-text-length 300 ;; Determines how long until it substitutes with 'notes for..'
         org-noter-highlight-selected-text t
-        org-noter-use-indirect-buffer t
+        org-noter-use-indirect-buffer nil
         org-noter-always-create-frame nil
         org-noter-closest-tipping-point 0.4
         org-noter-doc-split-fraction '(0.6 . 0.4)))
 
-(setq! org-noter-highlight-selected-text t) ; idk if this is needed but idc
 
 ;; zotxt and zotero integration
 ;;(use-package! zotxt
@@ -491,15 +535,17 @@
 ;;
 ;;(setq! zotxt-default-bibliography-style "chicago-notes-bibliography")
 
-;;;; org-agenda
-(add-to-list 'display-buffer-alist
-             '("\\*Org Agenda\\*"
-               (display-buffer-in-side-window)
+;;;; org-agenda https://github.com/alphapapa/org-super-agenda
+;;(add-to-list 'display-buffer-alist
+;;'("\\*Org Agenda\\*"
+;;(side . right)           ;; or 'left, 'bottom, 'top
+;;(window-width . 0.7)     ;; or use window-height for top/bottom
+;;(slot . 0)
+;;(window-parameters . ((no-delete-other-windows . t)))))
 
-               (side . right)           ;; or 'left, 'bottom, 'top
-               (window-width . 0.7)     ;; or use window-height for top/bottom
-               (slot . 0)
-               (window-parameters . ((no-delete-other-windows . t)))))
+(map! :map 'org-agenda-mode-map
+      :e "'" #'org-agenda
+      :e "C-t" #'org-pomodoro)
 
 (map! :nv "G"
       (lambda ()
@@ -509,81 +555,158 @@
 
 ;; Hide some tags such as ATTATCH
 (evil-set-initial-state 'org-agenda-mode 'emacs)
+(add-to-list 'evil-emacs-state-modes 'org-agenda-mode)
 (after! org-agenda
+  (after! evil (add-to-list 'evil-emacs-state-modes 'org-agenda-mode)
+    (evil-set-initial-state 'org-agenda-mode 'emacs))
   (evil-set-initial-state 'org-agenda-mode 'emacs)
+  (add-to-list 'evil-emacs-state-modes 'org-agenda-mode)
   (custom-set-faces!
     '(org-agenda-date-today :foreground "goldenrod3" :inverse t :height 1.1 :underline t :box t)
     '(org-agenda-date  :foreground "white" :box t)
     '(org-agenda-date-weekend :foreground "grey68" :box t))
-  (setq org-agenda-hide-tags-regexp (concat org-agenda-hide-tags-regexp "\\|ATTACH")
-        org-agenda-files (append org-agenda-files '("~/org/" "~/org/journal/"))
-        org-agenda-follow-indirect nil ;; TODO What's the best value for this to not be confusing
-        org-agenda-skip-scheduled-if-done t
-        org-agenda-skip-scheduled-delay-if-deadline t
-        org-agenda-skip-deadline-prewarning-if-scheduled t
-        org-agenda-span 7
-        org-agenda-sorting-strategy
-        '((agenda habit-down time-up category-keep urgency-down)
-          (todo urgency-down category-keep) (tags urgency-down category-keep)
-          (search category-keep))
-        org-priority-default  66
-        org-agenda-start-on-weekday 1
-        org-agenda-start-day nil
-        org-agenda-window-setup 'current-window
-        org-deadline-warning-days 0 ;; TODO Change once i stop using so many deadlines
-        org-agenda-todo-list-sublevels nil
-        org-agenda-window-frame-fractions '(0.5 . 0.8)
-        org-agenda-skip-deadline-if-done t
-        org-startup-shrink-all-tables t
-        org-agenda-start-with-follow-mode nil)
+  (setq! org-agenda-hide-tags-regexp nil
+         org-agenda-remove-tags t ;; TODO until i fix tag alignment, this will be t
+         org-agenda-files (append org-agenda-files '("~/org/" "~/org/journal/"))
+         org-agenda-follow-indirect nil ;; TODO What's the best value for this to not be confusing
+         org-agenda-skip-scheduled-if-done t
+         org-habit-show-all-today nil
+         org-habit-show-done-always-green t
+         org-agenda-skip-scheduled-delay-if-deadline t
+         org-agenda-skip-scheduled-if-deadline-is-shown t
+         org-agenda-todo-ignore-scheduled t
+         org-habit-following-days 4
+         org-agenda-todo-ignore-deadlines t
+         org-agenda-skip-deadline-prewarning-if-scheduled nil
+         org-agenda-span 7
+         org-agenda-sorting-strategy
+         '((agenda time-up deadline-up priority-down)
+           (todo urgency-down ) (tags urgency-down ))
+         org-priority-default  67
+         org-priority-lowest 68
+         org-fold-show-context-detail '((agenda . tree)
+                                        (org-goto . ancestors)
+                                        (bookmark-jump . lineage)
+                                        (isearch . lineage)
+                                        (default . ancestors))
+         org-priority-start-cycle-with-default nil
+         org-agenda-start-on-weekday 1
+         org-agenda-start-day nil
+         org-agenda-window-setup 'only-window
+         org-agenda-restore-windows-after-quit t
+         org-deadline-warning-days 7 ;; TODO Change once i stop using so many deadlines
+         org-agenda-todo-list-sublevels nil
+         org-agenda-window-frame-fractions '(0.5 . 0.8)
+         org-agenda-skip-deadline-if-done t
+         org-startup-shrink-all-tables t
+         org-super-agenda-groups nil
+         org-agenda-start-with-follow-mode nil)
 
-  (setq org-agenda-custom-commands
-        '(("s" "Super Agenda" agenda ""
-           ((org-agenda-time-grid
-             '((daily require-timed) (800 1000 1200 1400 1600 1800 2000 2200) "......" "----------------"))
-            (org-super-agenda-groups
-             '((:name "" :time-grid t)
-               (:name "Class" :tag "class")
-               (:name "Habits" :habit t)))))
-          ("d" "Daily Super Agenda" agenda ""
-           ((org-agenda-span 1)
-            (org-agenda-time-grid
-             '((daily require-timed) (800 1000 1200 1400 1600 1800 2000 2200) "......" "----------------"))
-            (org-super-agenda-groups
-             '((:name "" :time-grid t)
-               (:name "Class" :tag "class")
-               (:name "Habit" :habit t)))))
-          ("n" "Agenda and all TODOs" ((agenda "") (alltodo "")))
-          ("u" "Unscheduled TODOs"
-           todo ""
-           ((org-agenda-skip-function
-             '(org-agenda-skip-entry-if 'scheduled 'deadline))
-            (org-agenda-overriding-header "Unscheduled TODOs")))
-          ("r" "Reading & To-Read" ((todo "TOREAD") (todo "READING")))
-          ("c" "Classes" agenda ""
-           (;(org-super-agenda-groups '(())) TODO
-            (org-agenda-tag-filter-preset '("+class"))))
-          ("p" "Personal" agenda "" ((org-agenda-tag-filter-preset '("-class"))))))
-
-
+  (setq
+   org-agenda-custom-commands
+   '(("w" "Weekly Super Agenda" agenda ""
+      ((org-agenda-time-grid '((daily require-timed remove-match) (800 1000 1200 1400 1600 1800) "......" "----------------"))
+       (org-deadline-warning-days 0)
+       (org-scheduled-past-days 0)
+       (org-habit-show-habits nil)
+       (org-super-agenda-groups
+        '((:name "" :time-grid t)
+          (:name "Class" :tag "class")
+          (:name "Habits" :habit t)))))
+     ("W" "Weekly Super Agenda" agenda ""
+      ((org-agenda-window-setup 'current-window)
+       (org-deadline-warning-days 0)
+       (org-scheduled-past-days 0)
+       (org-agenda-time-grid '((daily require-timed remove-match) (800 1000 1200 1400 1600 1800) "......" "----------------"))
+       (org-super-agenda-groups
+        '((:name "" :time-grid t)
+          (:name "Class" :tag "class")
+          (:name "Habits" :habit t)))))
+     ("h" "Habits" agenda ""
+      ((org-agenda-span 1)
+       (org-habit-show-habits t)
+       (org-super-agenda-groups
+        '((:discard (:not (:habit t)))
+          (:habit t)))))
+     ("d" "Daily Super Agenda"
+      ((agenda ""
+               ((org-agenda-skip-scheduled-if-deadline-is-shown t)
+                (org-agenda-span 1)
+                (org-deadline-warning-days 7)
+                (org-agenda-time-grid '((today require-timed remove-match) (800 1000 1200 1400 1600 1800) "......" "----------------"))
+                (org-super-agenda-groups
+                 '((:name "" :time-grid t)
+                   (:name "" :and (:deadline nil :scheduled nil))
+                   (:name "Class Today"
+                    :and (:tag "class" :deadline past :not (:habit t))
+                    :and (:tag "class" :date today :not (:habit t))
+                    :and (:tag "class" :scheduled past :not (:deadline future :habit t)))
+                   (:name "Misc Today"
+                    :and (:deadline past :not (:habit t))
+                    :and (:date today :not (:habit t))
+                    :and (:scheduled past :not (:deadline future :habit t)))
+                   (:name "Habits" :habit t)
+                   (:name "Class Upcoming" :tag "class")
+                   ))))))
+     ("D" "Daily Super Agenda (fullscreen)" agenda ""
+      ((org-agenda-window-setup 'current-window)
+       (org-agenda-skip-scheduled-if-deadline-is-shown t)
+       (org-agenda-span 1)
+       (org-deadline-warning-days 7)
+       (org-agenda-time-grid '((daily require-timed remove-match) (800 1000 1200 1400 1600 1800 2000) "......" "----------------"))
+       (org-super-agenda-groups
+        '((:name "" :time-grid t)
+          (:name "" :and (:deadline nil :scheduled nil))
+          (:name "Class Today"
+           :and (:tag "class" :deadline past)
+           :and (:tag "class" :date today :not (:habit t))
+           :and (:tag "class" :scheduled past :not (:deadline future)))
+          (:name "Class Upcoming" :and (:tag "class" :not (:habit t)))
+          (:name "Habits" :habit t)))))
+     ("n" "Agenda and all TODOs" ((agenda "") (alltodo "")))
+     ("t" "Unscheduled TODOs"
+      todo ""
+      ((org-agenda-skip-function
+        '(org-agenda-skip-entry-if 'scheduled 'deadline 'todo '("READING" "TOREAD")))
+       (org-super-agenda-groups '((:auto-category t)))
+       (org-agenda-overriding-header "Unscheduled TODOs")))
+     ("r" "Reading & To-Read" ((todo "READING") (todo "TOREAD") (todo "DNF"))
+      ((org-agenda-view-columns-initially nil)
+       (org-agenda-prefix-format '((todo . " %(format \"%-20s\" (or (org-entry-get nil \"AUTHOR\" t) \"\")) %i %?-12t %s"))))
+      (org-agenda-overriding-header ""))
+     ("c" "Classes" agenda ""
+      (;(org-super-agenda-groups '(())) TODO
+       (org-deadline-warning-days 0)
+       (org-scheduled-past-days 0)
+       (org-agenda-tag-filter-preset '("+class"))))
+     ("p" "Personal" agenda ""
+      ((org-deadline-warning-days 0)
+       (org-habit-show-habits nil)
+       (org-scheduled-past-days 0)
+       (org-agenda-tag-filter-preset '("-class"))))))
 
   (set-popup-rule! "^\\*Org Agenda" :ignore t)
-  (setq org-agenda-window-setup 'current-window))
 
 
-(add-hook! 'org-agenda-mode-hook :append
-  (visual-line-mode -1)
-  (setq org-agenda-prefix-format
-        '((agenda . " %i %-12:c%?-12t% s")
-          (todo . " %i %-12:c")
-          (tags . " %i %-12:c")
-          (search . " %i %-12:c"))))
+  (add-hook! 'org-agenda-mode-hook :append
+    (visual-line-mode -1)
+    (setq org-agenda-prefix-format
+          '((agenda . " %i %-12:c%?-12t% s")
+            (todo . " %i %-12:c")
+            (tags . " %i %-12:c")
+            (search . " %i %-12:c"))))
 
-(defun my/org-agenda-adjust-text-size ()
-  (if (= text-scale-mode-amount 0)
-      (text-scale-set -0.8)))
+  (defun my/org-agenda-adjust-text-size ()
+    (if (= text-scale-mode-amount 0)
+        (text-scale-set -0.8)))
 
-(add-hook! 'org-agenda-finalize-hook #'my/org-agenda-adjust-text-size)
+  (add-hook! 'org-agenda-finalize-hook #'my/org-agenda-adjust-text-size)
+  (add-hook! 'org-agenda-finalize-hook #'beginning-of-buffer))
+
+(after! org-agenda
+  (evil-set-initial-state 'org-agenda-mode 'emacs)
+  (evil-set-initial-state 'evil-org-agenda-mode 'emacs)
+  (add-to-list 'evil-emacs-state-modes 'org-agenda-mode))
 
 ;;;;; org-super-agenda
 (after! evil-org-agenda
@@ -596,7 +719,17 @@
           org-super-agenda-unmatched-name "Other"
           org-super-agenda-header-prefix " ")))
 
+;;;; org-books
+(use-package! org-books
+  :config
+  (map! :leader
+        "a" #'org-books-add-book
+        "A" #'org-books-add-url)
+  (setq org-books-file "~/org/reading.org"
+        org-books-file-depth 1))
 ;;;; export
+
+
 ;;;; ox-*
 (use-package! ox-typst
   :after org)
@@ -686,12 +819,12 @@
 (map! :map 'override
       :leader
       "'" #'org-agenda
-      "nf" '(lambda ()
-              (interactive)
-              (consult-find org-directory (cons " org" 0)))
-      "nF" #'+default/find-in-notes
-      "x" #'org-capture
+      "x" #'+org-capture/open-frame
       "X" #'doom/open-scratch-buffer)
+
+(map! :after org
+      :map 'org-agenda-mode-map
+      "k" #'+org-capture/open-frame)
 ;;; Evil
 ;; Normally evil doens't respect visual-line-mode. Hopefully this fixes it??
 (after! evil
@@ -794,12 +927,13 @@
 ;;; Roam
 (after! org-roam
   (setq! org-roam-directory "~/sync/misc/Roam/"))
-;;; typst-ts
+;;; typst
+;;;; typst-ts
 (use-package! typst-ts-mode
   :mode "\\.typ\\'"
   :hook (typst-ts-mode . eglot-ensure)
   :init (setq
-         typst-ts-watch-options "--open"
+         typst-ts-watch-options nil
          typst-ts-mode-grammar-location (expand-file-name "tree-sitter/libtree-sitter-typst.so" user-emacs-directory)
          typst-ts-mode-enable-raw-blocks-highlight t)
   :config
@@ -816,6 +950,13 @@
                                           "tinymist"
                                           "typst-lsp"))))))
 
+;;;; typst-preview
+(use-package! typst-preview
+  :init
+  (setq typst-preview-autostart t
+        typst-preview-open-browser-automatically t)
+  :config
+  (setq typst-preview-browser "capp.sh"))
 ;;; ticktick.el
 (use-package! ticktick
   :config (setq ticktick-client-id "your-client-id"

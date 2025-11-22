@@ -80,6 +80,7 @@
   :recipe (:host github :repo "remimimimimi/org-typst-preview.el"))
 (package! typst-preview
   :recipe (:host github :repo "havarddj/typst-preview.el"))
+(package! websocket)
 (package! typst-ts-mode)
 (package! org-timeblock
   :recipe (:host github :repo "ichernyshovvv/org-timeblock"))
@@ -108,3 +109,6 @@
 (package! org-alert)
 (package! org-super-agenda)
 (package! ticktick)
+(package! calibredb)
+(package! org-books)
+(package! org-ql)

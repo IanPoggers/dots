@@ -7,7 +7,8 @@ return {
   {
     "chomosuke/typst-preview.nvim",
     opts = function(_, opts)
-      opts.open_cmd = 'chromium --app="%s"'
+      opts.open_cmd =
+        'chromium --enable-features=WebAppEnableUrlHandlers disable-features=GlobalMediaControls --app="%s" 2>/dev/null'
       opts.invert_colors = "auto"
       return opts
     end,
