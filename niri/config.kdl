@@ -8,11 +8,21 @@
 spawn-at-startup "mako"
 spawn-at-startup "waybar"
 spawn-at-startup "swww restore"
+spawn-at-startup "wlsunset -l 47.6 -L -122.3"
 spawn-at-startup "swayidle" "-w" "timeout" "601" "niri msg action power-off-monitors" "timeout" "600" "swaylock -f" "before-sleep" "swaylock -f"
 
 // Input device configuration.
 // Find the full list of options on the wiki:
 // https://yalter.github.io/niri/Configuration:-Input
+
+
+clipboard {
+        // Middle click paste is rather annoying, and this setting disables it.
+        disable-primary
+    }
+
+
+
 input {
     keyboard {
         xkb {
@@ -33,8 +43,8 @@ input {
 
         }
 
-        repeat-delay 350
-        repeat-rate 50
+        repeat-delay 250
+        repeat-rate 90
         // track-layout "global"
         // Enable numlock on startup, omitting this setting disables it.
         numlock
@@ -46,15 +56,15 @@ input {
     touchpad {
         // off
         tap
-        dwt // disable while typing
+        // dwt // disable while typing
         // dwtp // disable while track-pointing..
         drag true
-        // drag-lock
+        drag-lock
         //natural-scroll
-        accel-speed 0.50
-        scroll-factor 0.4
-        // accel-profile "flat"
-        // scroll-method "two-finger"
+        accel-speed 0.8
+        scroll-factor 0.5
+        accel-profile "adaptive" // "flat" or "adaptive"
+        scroll-method "two-finger"
         // disabled-on-external-mouse
     }
 
@@ -104,7 +114,7 @@ input {
     mode "1920x1080@120.030"
 
     // You can use integer or fractional scale, for example use 1.5 for 150% scale.
-    scale 2
+    scale 1
 
     // Transform allows to rotate the output counter-clockwise, valid values are:
     // normal, 90, 180, 270, flipped, flipped-90, flipped-180 and flipped-270.
@@ -123,7 +133,7 @@ input {
 }
 
 output "eDP-1" {
-    scale 1.15
+    scale 1
 }
 
 // Settings that influence how windows are positioned and sized.
@@ -135,13 +145,14 @@ layout {
     gaps 6
     always-center-single-column
 
+
     // When to center a column when changing focus, options are:
     // - "never", default behavior, focusing an off-screen column will keep at the left
     //   or right edge of the screen.
     // - "always", the focused column will always be centered.
     // - "on-overflow", focusing a column will center it if it doesn't fit
     //   together with the previously focused column.
-    center-focused-column "on-overflow"
+    center-focused-column "never"
 
     // You can customize the widths that "switch-preset-column-width" (Mod+R) toggles between.
     preset-column-widths {
@@ -149,6 +160,7 @@ layout {
         // For example, you can perfectly fit four windows sized "proportion 0.25" on an output.
         // The default preset widths are 1/3, 1/2 and 2/3 of the output.
         proportion 0.6
+        proportion 0.5
         proportion 0.4
 
         // Fixed sets the width in logical pixels exactly.
@@ -161,7 +173,7 @@ layout {
     // You can change the default width of the new windows.
     //default-column-width { proportion 0.6; }
     // If you leave the brackets empty, the windows themselves will decide their initial width.
-    default-column-width { proportion 0.4; }
+    default-column-width { proportion 0.5; }
 
     // By default focus ring and border are rendered as a solid background rectangle
     // behind windows. That is, they will show up through semitransparent windows.
@@ -275,8 +287,8 @@ layout {
     // Top and bottom struts will simply add outer gaps in addition to the area occupied by
     // layer-shell panels and regular gaps.
     struts {
-        left 15
-        right 15
+        left 8
+        right 8
         // top 64
         // bottom 64
     }
@@ -306,7 +318,7 @@ prefer-no-csd
 // You can change the path where screenshots are saved.
 // A ~ at the front will be expanded to the home directory.
 // The path is formatted with strftime(3) to give you the screenshot date and time.
-screenshot-path "~/img/screenshots/%Y-%m-%d %H-%M-%S.png"
+screenshot-path "~/img/screenshots/%Y-%m-%d--%H-%M-%S.png"
 
 // You can also set this to null to disable saving screenshots to disk.
 // screenshot-path null
@@ -328,13 +340,6 @@ animations {
 
 // Work around WezTerm's initial configure bug
 // by setting an empty default-column-width.
-window-rule {
-    // This regular expression is intentionally made as specific as possible,
-    // since this is the default config, and we want no false positives.
-    // You can get away with just app-id="wezterm" if you want.
-    match app-id=r#"^org\.wezfurlong\.wezterm$"#
-    default-column-width {}
-}
 
 // Open the Firefox picture-in-picture player as floating by default.
 window-rule {
@@ -375,12 +380,14 @@ binds {
     // Most actions that you can bind here can also be invoked programmatically with
     // `niri msg action do-something`.
 
+
     // Mod-Shift-/, which is usually the same as Mod-?,
     // shows a list of important hotkeys.
     Mod+Shift+Slash { show-hotkey-overlay; }
 
+    Mod+C { spawn-sh "chromium --app='https://gemini.google.com/app'"; }
+
     // Suggested binds for running programs: terminal, app launcher, screen locker.
-    Mod+T hotkey-overlay-title="Open a Terminal: alacritty" { spawn "alacritty"; }
     Mod+Return hotkey-overlay-title="Open a Terminal: alacritty" { spawn "alacritty"; }
     Mod+E hotkey-overlay-title="Open Emacsclient" { spawn-sh "emacsclient -c -a ''"; } 
     // TODO why no work
@@ -400,8 +407,8 @@ binds {
     // Example volume keys mappings for PipeWire & WirePlumber.
     // The allow-when-locked=true property makes them work even when the session is locked.
     // Using spawn allows to pass multiple arguments together with the command.
-    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.025+"; }
-    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.025-"; }
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.050+"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.050-"; }
     XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
     XF86AudioMicMute     allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
 
@@ -539,8 +546,6 @@ binds {
     // Alternatively, there are commands to move just a single window:
     // Mod+Ctrl+1 { move-window-to-workspace 1; }
 
-    // Switches focus between the current and the previous workspace.
-    Mod+Tab { focus-workspace-previous; }
 
     // The following binds move the focused window in and out of a column.
     // If the window is alone, they will consume it into the nearby column to the side.
@@ -553,20 +558,21 @@ binds {
     // Expel the bottom window from the focused column to the right.
     Mod+Period { expel-window-from-column; }
 
-    Mod+R { switch-preset-column-width; }
+    Mod+T { set-column-width "60%"; }
+    Mod+A { set-column-width "40%" ; }
+    Mod+R { set-column-width "50%" ; }
     // Cycling through the presets in reverse order is also possible.
     // Mod+R { switch-preset-column-width-back; }
     Mod+Shift+R { switch-preset-window-height; }
     Mod+Ctrl+R { reset-window-height; }
-    Mod+F { set-column-width "98%" ; }
     Mod+Shift+F { fullscreen-window; }
+    Mod+M { set-column-width "100%" ; }
 
     // Expand the focused column to space not taken up by other fully visible columns.
     // Makes the column "fill the rest of the space".
-    Mod+Ctrl+F { expand-column-to-available-width; }
+    Mod+F { expand-column-to-available-width; }
 
     //Mod+Space { center-column; }
-    Mod+M { center-column; }
     Mod+Space { center-column; }
 
     // Center all fully visible columns on screen.
@@ -642,7 +648,8 @@ gestures {
     }
 
     hot-corners {
-        off
+        // off
+        // top-left
         // top-right
         // bottom-left
         // bottom-right
@@ -651,4 +658,35 @@ gestures {
 
 overview {
     zoom 0.4
+}
+
+recent-windows {
+    // off
+    debounce-ms 750
+
+    open-delay-ms 10
+
+    highlight {
+        active-color "#999999ff"
+        urgent-color "#ff9999ff"
+        padding 10
+        corner-radius 7
+    }
+
+    previews {
+        max-height 480
+        max-scale 0.44
+    }
+
+    binds {
+        //Alt+Tab         { next-window; }
+        //Alt+Shift+Tab   { previous-window; }
+        //Alt+grave       { next-window     filter="app-id"; }
+        //Alt+Shift+grave { previous-window filter="app-id"; }
+
+        Mod+Tab         { next-window; }
+        Mod+Shift+Tab   { previous-window; }
+        Mod+grave       { next-window     filter="app-id"; }
+        Mod+Shift+grave { previous-window filter="app-id"; }
+    }
 }

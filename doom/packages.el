@@ -90,7 +90,6 @@
 (package! org-download)
 (package! mixed-pitch)
 (package! howm)
-(package! ox-typst)
 (package! nov)
 (package! org-remark)
 (package! visual-fill-column)
@@ -102,7 +101,15 @@
 (package! tikz)
 (package! evil-vimish-fold)
 (package! zotxt)
+
 (package! denote)
+(package! consult-notes)
+(package! denote-org)
+;;(package! consult-denote) NOTE this shit doesn't work
+
+(package! denote-menu)
+(package! denote-explore)
+
 (package! whisper
   :recipe (:host github :repo "natrys/whisper.el"))
 (package! olivetti)
@@ -112,3 +119,19 @@
 (package! calibredb)
 (package! org-books)
 (package! org-ql)
+(package! ultra-scroll)
+(package! org-appear)
+
+(package! spacious-padding)
+
+(package! ox-tufte)
+
+(package! kdl-mode)
+
+(package! org-anki)
+
+(package! rainbow-delimiters)
+
+(package! xr)
+
+(package! f)
