@@ -133,7 +133,6 @@ input {
 }
 
 output "eDP-1" {
-    scale 1
 }
 
 // Settings that influence how windows are positioned and sized.
@@ -141,7 +140,7 @@ output "eDP-1" {
 // https://yalter.github.io/niri/Configuration:-Layout
 layout {
     // Set gaps around windows in logical pixels.
-    empty-workspace-above-first
+    // empty-workspace-above-first
     gaps 6
     always-center-single-column
 
@@ -331,7 +330,7 @@ animations {
     // off
 
     // Slow down all animations by this factor. Values below 1 speed them up instead.
-    slowdown 1.5
+    slowdown 1
 }
 
 // Window rules let you adjust behavior for individual windows.
@@ -393,6 +392,7 @@ binds {
     // TODO why no work
     Mod+S hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
     Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
+    Mod+F hotkey-overlay-title="Run the File Manager" { spawn "thunar"; }
     Mod+X hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
     Mod+B hotkey-overlay-title="Run web browser: firefox" { spawn "firefox"; }
     Mod+Y hotkey-overlay-title="Do calculations" { spawn-sh "rofi -show calc"; }
@@ -421,7 +421,7 @@ binds {
     // Open/close the Overview: a zoomed-out view of workspaces and windows.
     // You can also move the mouse into the top-left hot corner,
     // or do a four-finger swipe up on a touchpad.
-    Mod+O repeat=false { toggle-overview; }
+    Mod+Tab repeat=false { toggle-overview; }
 
     Mod+Q repeat=false { close-window; }
 
@@ -570,7 +570,7 @@ binds {
 
     // Expand the focused column to space not taken up by other fully visible columns.
     // Makes the column "fill the rest of the space".
-    Mod+F { expand-column-to-available-width; }
+    // Mod+F { expand-column-to-available-width; }
 
     //Mod+Space { center-column; }
     Mod+Space { center-column; }
@@ -662,7 +662,7 @@ overview {
 
 recent-windows {
     // off
-    debounce-ms 750
+    debounce-ms 70
 
     open-delay-ms 10
 
@@ -679,14 +679,9 @@ recent-windows {
     }
 
     binds {
-        //Alt+Tab         { next-window; }
-        //Alt+Shift+Tab   { previous-window; }
-        //Alt+grave       { next-window     filter="app-id"; }
-        //Alt+Shift+grave { previous-window filter="app-id"; }
-
-        Mod+Tab         { next-window; }
-        Mod+Shift+Tab   { previous-window; }
-        Mod+grave       { next-window     filter="app-id"; }
-        Mod+Shift+grave { previous-window filter="app-id"; }
+        // Mod+Tab         { next-window; }
+        // Mod+Shift+Tab   { previous-window; }
+        // Mod+grave       { next-window     filter="app-id"; }
+        // Mod+Shift+grave { previous-window filter="app-id"; }
     }
 }

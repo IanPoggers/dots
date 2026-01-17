@@ -19,7 +19,7 @@
   (xterm-mouse-mode 1))
 ;;; Don't display output of async cmds with no output.
 (setq async-shell-command-display-buffer nil)
-;;; idk make sure the f.el lib is avaliable
+;;; Make sure the f.el lib is avaliable
 (use-package! f)
 ;;; General Emacs
 (global-auto-revert-mode 1)
@@ -43,19 +43,33 @@
 (global-hl-line-mode -1)
 (auto-save-visited-mode)
 
+(defun my/inbox-has-headings-p ()
+  ;; Returns t if grep finds a match (exit code 0), nil otherwise
+  (interactive)
+  (eq 0 (call-process "grep" nil nil nil
+                      "-q"           ;; Silent mode (just return exit code)
+                      "^\\*\\+ "     ;; Regex: Start of line, 1+ stars, space
+                      (expand-file-name "Inbox.org" org-directory))))
+
+(defun my/inbox-has-headings-p ()
+  ;; Returns t if grep finds a match (exit code 0), nil otherwise
+  (interactive)
+  (eq 0 (call-process "grep" nil nil nil
+                      "-q"           ;; Silent mode (just return exit code)
+                      "^\\*\\+ "     ;; Regex: Start of line, 1+ stars, space
+                      (expand-file-name "Inbox.org" org-directory))))
 
 (defun my/open-inbox-or-todo ()
   (interactive)
-  (if (with-temp-buffer
-        (insert-file-contents (f-join org-directory "Inbox.org"))
-        (goto-char (point-min))
-        (re-search-forward org-heading-regexp nil t))
+  (if (my/inbox-has-headings-p)
       (find-file (f-join org-directory "Inbox.org"))
     (find-file (f-join org-directory "todo.org"))))
 
 (setq
  inhibit-startup-screen t
- initial-buffer-choice #'my/open-inbox-or-todo)
+ initial-buffer-choice (f-join org-directory "Index.org"))
+
+(map! :leader "l" #'my/open-inbox-or-todo)
 
 ;;;; Tab bar above emacs
 (tab-bar-mode 1)
@@ -72,17 +86,6 @@
 
 ;;;; Default file modes
 (add-to-list 'auto-mode-alist '("\\.jsonc\\'" . json-mode))
-;;;; display-buffer-alist
-(setq display-buffer-alist
-      '(("\\*\\(?:Org Select\\|Agenda Commands\\)\\*"
-         (display-buffer-below-selected
-          display-buffer-in-side-window)
-         (body-function . select-window)
-         (window-height . (lambda (win) (fit-window-to-buffer win nil 12)))
-         (side . top)
-         (slot . -2)
-         (preserve-size . (nil . t))
-         (window-parameters . ((mode-line-format . nil)))))) ;; TODO
 ;;;; links in source comments
 (global-goto-address-mode 1)
 ;;;; isearch
@@ -120,6 +123,10 @@
 (add-hook 'prog-mode-hook
           (lambda ()
             (setq-local line-spacing 0.0)))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            (setq-local line-spacing 0.1)))
 
 ;;;; scratch buffer
 (setq! doom-scratch-initial-major-mode 'emacs-lisp-mode)
@@ -323,13 +330,14 @@
   ;; TODO should this be here????
   (add-hook 'mixed-pitch-mode-hook #'variable-pitch-mode)
 
+  (add-hook 'org-mode-hook #'mixed-pitch-mode)
+
   (pushnew! mixed-pitch-fixed-pitch-faces
-            'org-superstar-leading
+            'org-superstar-leading 'org-date
             'org-list-dt 'org-document-info
             'warning 'org-property-value 'org-special-keyword
             'org-drawer 'org-cite-key  'org-hide
-            'corfu-default 'font-latex-math-face)
-  )
+            'corfu-default 'font-latex-math-face))
 
 ;;;; Remove certain faces from mixed-pitch cuz its fucky
 (after! mixed-pitch
@@ -358,8 +366,8 @@
                     :extend t)
 
 ;;; adaptive wrap
-(add-hook! 'prog-mode-hook #'adaptive-wrap-prefix-mode)
-(add-hook! 'prog-mode-hook #'visual-line-mode)
+(add-hook 'prog-mode-hook #'adaptive-wrap-prefix-mode)
+(add-hook 'prog-mode-hook #'visual-line-mode)
 
 ;; Make sure that the wrapped lines are clearly indented.
 (setq adaptive-wrap-extra-indent 2)
@@ -428,7 +436,8 @@
    org-custom-properties '("AUTHOR" "EXPORT_LATEX_CLASS" "EXPORT_LATEX_CLASS_OPTIONS" )
    org-pretty-entities-include-sub-superscripts t
    org-todo-keywords '((sequence  "TODO(t)" "WAIT(w)" "NEXT(n)" "|" "DONE(d)" "KILL(k)")
-                       (sequence "READING(g)" "TOREAD(r)" "|" "DNF" "READ(R)"))
+                                        ;(sequence "READING(g)" "TOREAD(r)" "|" "DNF" "READ(R)")
+                       )
    org-use-sub-superscripts t
    org-export-with-section-numbers t
    org-export-with-toc nil
@@ -473,14 +482,14 @@
 (after! (:and org color)
 
   (dolist (face
-           '((org-level-1 . 1.0)
-             (org-level-2 . 1.0)
-             (org-level-3 . 1.0)
-             (org-level-4 . 1.0)
-             (org-level-5 . 1.0)
-             (org-level-6 . 1.0)
-             (org-level-7 . 1.0)
-             (org-level-8 . 1.0)))
+           '((org-level-1 . 1.1)
+             (org-level-2 . 1.1)
+             (org-level-3 . 1.1)
+             (org-level-4 . 1.1)
+             (org-level-5 . 1.1)
+             (org-level-6 . 1.1)
+             (org-level-7 . 1.1)
+             (org-level-8 . 1.1)))
     ;; Decided to not make them larger, for now. But idk i may change my mind.
     ;;'((org-level-1 . 1.35)
     ;;  (org-level-2 . 1.30)
@@ -497,8 +506,6 @@
                         :extend nil
                         :slant 'italic
                         :overline nil
-                        :underline 'unspecified
-                        :background 'unspecified
                         ))
 
   (set-face-attribute 'org-level-1 nil
@@ -509,13 +516,12 @@
                       :overline nil)
 
   (set-face-attribute 'org-link nil
+                      :family my/monospace
                       :extend nil)
 
   (set-face-attribute 'org-list-dt nil
                       :slant 'italic)
 
-  (set-face-attribute 'org-headline-done nil
-                      :foreground 'unspecified)
   (set-face-attribute 'org-done nil
                       :family my/monospace
                       :foreground "sea green")
@@ -553,7 +559,7 @@
 
   (set-face-attribute 'org-drawer nil
                       :extend t
-                      :height 1.0)
+                      :height 0.8)
 
   (set-face-attribute 'org-special-keyword nil
                       :height 1.0
@@ -1137,19 +1143,20 @@
    org-agenda-skip-scheduled-if-done t
    org-habit-show-all-today nil
    org-habit-show-done-always-green t
-   org-agenda-skip-scheduled-delay-if-deadline t
    org-agenda-skip-scheduled-repeats-after-deadline t
    org-agenda-skip-scheduled-if-deadline-is-shown 'not-today
-   org-agenda-todo-ignore-scheduled t
+   org-agenda-todo-ignore-scheduled 'future
+   org-agenda-todo-ignore-deadlines 'future
+   org-agenda-todo-ignore-timestamp 'future
    org-habit-following-days 2
    +org-habit-graph-padding 0
-   org-agenda-todo-ignore-deadlines t
-   org-agenda-skip-deadline-prewarning-if-scheduled nil)
+   org-agenda-skip-deadline-prewarning-if-scheduled 'pre-scheduled)
 
   (setq org-agenda-sorting-strategy
         '((agenda
-           timestamp-up
            habit-down
+           priority-down
+           timestamp-up
            deadline-up
            time-up
            priority-down)
@@ -1166,9 +1173,12 @@
                                   (default . ancestors))
    org-priority-start-cycle-with-default nil
    org-agenda-start-day nil
-   org-agenda-window-setup 'reorganize-frame
+   org-agenda-window-setup 'only-window
    org-agenda-restore-windows-after-quit t
-   org-deadline-warning-days 0 ;; TODO Change once i stop using so many deadlines
+   org-deadline-warning-days 14 ;; TODO Change once i stop using so many deadlines
+   
+   ;; TODO setting this to 0 somehow removes all non-past scheduled from agenda. no idea why:
+   org-scheduled-delay-days 0
    org-agenda-todo-list-sublevels nil
    org-agenda-window-frame-fractions '(0.5 . 0.8)
    org-agenda-skip-deadline-if-done t
@@ -1177,24 +1187,17 @@
    org-agenda-start-on-weekday nil ;; NOTE 1 for Monday
    org-agenda-start-with-follow-mode nil)
 
-  (setq
-   org-super-agenda-groups '((:name "" :time-grid t)
-                             (:name "" :and
-                                    (:deadline nil
-                                     :scheduled nil))
-                             (:name "" :anything t)))
-
 
   (setq
    org-agenda-custom-commands
-   '(("'" "Default Agenda IDK" agenda "")
+   '(("'" "Default Agenda IDK" agenda "" ((org-deadline-warning-days 7)
+                                          (org-agenda-span 1)))
      ("w" "Weekly Super Agenda"
       ((agenda ""
                ((org-agenda-overriding-header "")
                 (org-agenda-skip-scheduled-if-deadline-is-shown t)
                 (org-agenda-span 7)
                 (org-habit-graph-column 70)
-                (org-deadline-warning-days 7)
                 (org-agenda-time-grid '((today require-timed remove-match) (800 1000 1200 1400 1600 1800) "......" "----------------"))
                 (org-super-agenda-groups
                  '((:name "" :time-grid t)
@@ -1231,15 +1234,8 @@
         '((:discard (:not (:habit t)))
           (:habit t)))))
      ("d" "Daily Super Agenda" agenda ""
-      ((org-deadline-warning-days 7)
-       (org-agenda-span 1)))
+      ((org-agenda-span 1)))
      ("n" "Agenda and all TODOs" ((agenda "") (alltodo "")))
-     ("t" "Unscheduled TODOs"
-      todo ""
-      ((org-agenda-skip-function
-        '(org-agenda-skip-entry-if 'scheduled 'deadline 'todo '("READING" "TOREAD")))
-       (org-super-agenda-groups '((:auto-parent t)))
-       (org-agenda-overriding-header "Unscheduled TODOs")))
      ("r" "Reading & To-Read" ((todo "READING") (todo "TOREAD") (todo "DNF"))
       ((org-agenda-view-columns-initially nil)
        (org-agenda-prefix-format '((todo . " %(format \"%-18s\" (or (org-entry-get nil \"AUTHOR\" t) \"\")) %i %?-12t %s"))))
@@ -1269,11 +1265,33 @@
   (evil-set-initial-state 'evil-org-agenda-mode 'emacs)
   (add-to-list 'evil-emacs-state-modes 'org-agenda-mode))
 
+;;;;; org-super-agenda groups
+(after! org
+  (setq
+   org-super-agenda-groups '((:name "" :time-grid t)
+                             ;; Events are not scheduled or deadlines.
+                             (:name "" :and
+                                    (:deadline nil
+                                     :scheduled nil))
+                             ;; Not a habit and not in the future
+                             (:name "\nToday"
+                              :and (:not (:deadline future
+                                          :scheduled future)
+                                         :not (:habit t)))
+                             (:name "\nHabits" :habit t)
+                             (:name "\nUpcoming" :deadline future)
+                             (:name "" :anything t)))
+  )
+
+
 ;;;;; org-agend entry text
 (after! org-agenda
   (setq org-agenda-entry-text-maxlines 10
         org-agenda-start-with-entry-text-mode nil)
   )
+;;;; Make check boxes under a heading re-set when the heading is done
+(after! org
+  (add-hook 'org-todo-repeat-hook #'org-reset-checkbox-state-subtree))
 ;;;;; org-super-agenda
 (after! evil-org-agenda
   (use-package! org-super-agenda
@@ -1285,14 +1303,8 @@
           org-super-agenda-unmatched-name "Other"
           org-super-agenda-header-prefix " ")))
 
-;;;; org-books
-(use-package! org-books
-  :config
-  (map! :leader
-        "a" #'org-books-add-book
-        "A" #'org-books-add-url)
-  (setq org-books-file "~/org/reading.org"
-        org-books-file-depth 1))
+;;;; org-anki
+(use-package! org-anki)
 ;;;; consult
 (after! consult
   (map! :leader "nh" #'consult-org-agenda))
@@ -1559,24 +1571,23 @@
 ;;; Olivetti mode
 (use-package! olivetti
   :config
-  (setq-default olivetti-body-width 90)
+  (setq-default olivetti-body-width 80)
   (add-hook 'org-mode-hook
             (λ! (olivetti-mode 1))))
 
-(setq! fill-column 90)
+(setq! fill-column 80)
 
 
 ;;;; No Olivetti in scratch buffers
 ;;; ultra-scroll
-;;(use-package! ultra-scroll
-;;  :config
-;;  (ultra-scroll-mode 1)
-;;  (setq-default scroll-conservatively 80)
-;;  (setq scroll-conservatively 80 ; or whatever value you prefer, since v0.4
-;;        ultra-scroll-hide-cursor 0.5
-;;        ;; NOTE important: scroll-margin>0 not yet supported
-;;        scroll-margin 0)
-;;  )
+(use-package! ultra-scroll
+  :config
+  (setq-default scroll-conservatively 80)
+  (setq scroll-conservatively 80 ; or whatever value you prefer, since v0.4
+        ultra-scroll-hide-cursor 0.5
+        ;; NOTE important: scroll-margin>0 not yet supported
+        scroll-margin 0)
+  )
 ;;; custom bindings
 ;;;
 (defun my/preview () (interactive) (org-latex-preview 'buffer))
@@ -1723,19 +1734,6 @@
 (map! :mode org-mode
       :nv "z O" #'my/open-subtree-only)
 
-;;;; TODO z-n function in org
-(add-hook! 'clone-indirect-buffer-hook #'org-fold-hide-drawer-all)
-
-(defun my/zn ()
-  (interactive)
-  (org-narrow-to-subtree)
-  (goto-char (point-min)) ;; NOTE for some reason this is necessary
-  (evil-open-fold))
-
-(map! :mode org-mode
-      :map evil-org-mode-map
-      :n "zn" #'my/zn)
-
 ;;;; z-H moves to top
 (map! :mode org-mode
       :nv "zU" (lambda ()
@@ -1829,3 +1827,8 @@
 
 ;;; This warning is really fucking annoying
 (add-to-list 'warning-suppress-types '(org-element))
+;;;; emacs-lisp-mode config
+(add-hook 'emacs-lisp-mode-hook #'show-paren-mode)
+
+
+
