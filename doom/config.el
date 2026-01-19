@@ -418,7 +418,7 @@
    org-ascii-headline-spacing '(0 . 1)
    shr-inhibit-images '0 ;; for some reason this speeds scrolling when images are on screen.
    org-element-use-cache nil ; NOTE with this on, indirect buffers break
-   org-indirect-buffer-display 'other-window ; TODO should this be set to something else?
+   org-indirect-buffer-display 'current-window ; TODO should this be set to something else?
    org-link-file-path-type 'relative
    org-habit-show-habits t
    org-habit-scheduled-past-days nil
@@ -947,7 +947,7 @@
 
    org-pomodoro-start-sound-p t
    org-pomodoro-start-sound "~/.config/doom/assets/gong.mp3"
-   org-pomodoro-finished-sound "~/.config/doom/assets/chime.wav"
+   org-pomodoro-finished-sound "~/.config/doom/assets/gong.mp3"
    org-pomodoro-long-break-sound "~/.config/doom/assets/chime.wav"
    org-pomodoro-short-break-sound nil
    org-pomodoro-short-break-format "Break~%s"
@@ -968,13 +968,12 @@
    ;; so that this does not happen. The tick will come 6 seconds late
    ;; after 30 minutes: (/ 30 5) => 6
    org-pomodoro-ticking-frequency (+ (* 60 5) 2)
-   org-pomodoro-ticking-sound "~/.config/doom/assets/tick.mp3")
+   org-pomodoro-ticking-sound "~/.config/doom/assets/tick.wav")
 
   (map! :map 'org-agenda-mode-map
         :e "P" #'org-pomodoro)
   (map! :leader
-        "tp" #'org-pomodoro)
-  )
+        "tp" #'org-pomodoro))
 
 (use-package! org-clock
   :config
@@ -1313,6 +1312,8 @@
           org-super-agenda-unmatched-name "Other"
           org-super-agenda-header-prefix " ")))
 
+;;;; hide drawers when org-narrow-to-indirect-buffer
+(advice-add 'org-tree-to-indirect-buffer :after (lambda () (interactive) (org-fold-hide-drawer-all)))
 ;;;; org-anki
 (use-package! org-anki)
 ;;;; consult
