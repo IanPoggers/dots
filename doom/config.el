@@ -7,10 +7,10 @@
  my/notes-home (expand-file-name "Index.org" org-directory))
 
 (setq
- my/bullet "Iosevka Nerd Font Mono"
  my/header "Iosevka Nerd Font Mono"
  my/monospace "Iosevka Nerd Font Mono"
  my/variable "Inter"
+ my/bullet "Inter"
  my/pretty "Inter")
 ;;; Terminal Emacs configuation
 ;; NOTE I don't THINK this will have any impact
@@ -370,7 +370,7 @@
 (add-hook 'prog-mode-hook #'visual-line-mode)
 
 ;; Make sure that the wrapped lines are clearly indented.
-(setq adaptive-wrap-extra-indent 2)
+(setq adaptive-wrap-extra-indent 1)
 
 (add-hook 'conf-unix-mode-hook #'adaptive-wrap-prefix-mode)
 ;;; rust-mode
@@ -418,7 +418,7 @@
    org-ascii-headline-spacing '(0 . 1)
    shr-inhibit-images '0 ;; for some reason this speeds scrolling when images are on screen.
    org-element-use-cache nil ; NOTE with this on, indirect buffers break
-   org-indirect-buffer-display 'dedicated-frame ; TODO should this be set to something else?
+   org-indirect-buffer-display 'other-window ; TODO should this be set to something else?
    org-link-file-path-type 'relative
    org-habit-show-habits t
    org-habit-scheduled-past-days nil
@@ -501,7 +501,7 @@
     ;;  (org-level-8 . 1.1)))
     (set-face-attribute (car face) nil
                         :height (cdr face)
-                        :family my/monospace
+                        :family my/variable
                         :weight 'semi-bold
                         :extend nil
                         :slant 'italic
@@ -548,8 +548,13 @@
                       :family my/monospace)
 
   (set-face-attribute 'error nil
-                      :family my/monospace
-                      :weight 'bold)
+                      :slant 'normal)
+
+  (set-face-attribute 'warning nil
+                      :slant 'normal)
+
+  (set-face-attribute 'org-done nil
+                      :slant 'normal)
 
   (set-face-attribute 'underline nil
                       :underline my/emphasis-color)
@@ -1275,9 +1280,14 @@
                                      :scheduled nil))
                              ;; Not a habit and not in the future
                              (:name "\nToday"
-                              :and (:not (:deadline future
-                                          :scheduled future)
-                                         :not (:habit t)))
+                              ;; Only things which are deadlines in future, but scheduled in the past or today, should show up here.
+                              :and (
+                                    :not (
+                                          :and (:scheduled future
+                                                :deadline future)
+                                          :and (:deadline future
+                                                :scheduled nil))
+                                    :not (:habit t)))
                              (:name "\nHabits" :habit t)
                              (:name "\nUpcoming" :deadline future)
                              (:name "" :anything t)))
@@ -1571,11 +1581,11 @@
 ;;; Olivetti mode
 (use-package! olivetti
   :config
-  (setq-default olivetti-body-width 80)
+  (setq-default olivetti-body-width 70)
   (add-hook 'org-mode-hook
             (λ! (olivetti-mode 1))))
 
-(setq! fill-column 80)
+(setq! fill-column 70)
 
 
 ;;;; No Olivetti in scratch buffers
