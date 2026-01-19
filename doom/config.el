@@ -67,7 +67,7 @@
 
 (setq
  inhibit-startup-screen t
- initial-buffer-choice (f-join org-directory "Index.org"))
+ initial-buffer-choice #'my/open-inbox-or-todo)
 
 (map! :leader "l" #'my/open-inbox-or-todo)
 
@@ -324,7 +324,7 @@
 
 (use-package! mixed-pitch
   :config
-  (setq mixed-pitch-set-height t
+  (setq mixed-pitch-set-height nil
         variable-pitch-serif-font doom-variable-pitch-font)
 
   ;; TODO should this be here????
@@ -946,7 +946,7 @@
    org-clock-persist t
 
    org-pomodoro-start-sound-p t
-   org-pomodoro-start-sound "~/.config/doom/assets/chime.wav"
+   org-pomodoro-start-sound "~/.config/doom/assets/gong.mp3"
    org-pomodoro-finished-sound "~/.config/doom/assets/chime.wav"
    org-pomodoro-long-break-sound "~/.config/doom/assets/chime.wav"
    org-pomodoro-short-break-sound nil
@@ -956,7 +956,7 @@
 
    org-pomodoro-ticking-sound-states '(:pomodoro)
 
-   org-pomodoro-short-break-length 7
+   org-pomodoro-short-break-length 0
    org-pomodoro-manual-break t
    org-pomodoro-length 30
 
@@ -968,7 +968,7 @@
    ;; so that this does not happen. The tick will come 6 seconds late
    ;; after 30 minutes: (/ 30 5) => 6
    org-pomodoro-ticking-frequency (+ (* 60 5) 2)
-   org-pomodoro-ticking-sound "~/.config/doom/assets/gong.wav")
+   org-pomodoro-ticking-sound "~/.config/doom/assets/tick.mp3")
 
   (map! :map 'org-agenda-mode-map
         :e "P" #'org-pomodoro)
@@ -1149,7 +1149,7 @@
    org-habit-show-all-today nil
    org-habit-show-done-always-green t
    org-agenda-skip-scheduled-repeats-after-deadline t
-   org-agenda-skip-scheduled-if-deadline-is-shown 'not-today
+   org-agenda-skip-scheduled-if-deadline-is-shown t
    org-agenda-todo-ignore-scheduled 'future
    org-agenda-todo-ignore-deadlines 'future
    org-agenda-todo-ignore-timestamp 'future
@@ -1581,11 +1581,11 @@
 ;;; Olivetti mode
 (use-package! olivetti
   :config
-  (setq-default olivetti-body-width 70)
+  (setq-default olivetti-body-width 90)
   (add-hook 'org-mode-hook
             (λ! (olivetti-mode 1))))
 
-(setq! fill-column 70)
+(setq! fill-column 90)
 
 
 ;;;; No Olivetti in scratch buffers
