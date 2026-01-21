@@ -310,6 +310,8 @@
 ;;(load-theme 'catppuccin t t)
 ;;(catppuccin-reload)
 
+;;(setq! doom-theme 'doom-one)
+
 (setq! doom-theme 'doom-one)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
@@ -317,6 +319,11 @@
 
 ;; Disable Title Bar
 (add-to-list 'default-frame-alist '(undecorated . t))
+(add-to-list 'default-frame-alist '(resize-pixelwise . t))
+
+;; In ~/.emacs.d/init.el
+(setq frame-resize-pixelwise t)
+(setq window-resize-pixelwise t)
 
 
 ;;;; mixed-pitch
@@ -580,7 +587,7 @@
                       :extend t)
 
   (set-face-attribute 'org-document-title nil
-                      :family my/monospace
+                      ;;:family my/monospace
                       :weight 'bold
                       :slant 'italic)
 
@@ -1270,23 +1277,30 @@
   (add-to-list 'evil-emacs-state-modes 'org-agenda-mode))
 
 ;;;;; org-super-agenda groups
+(setq my/today-group
+      '(:and (
+              :not (
+                    :and (:scheduled future
+                          :deadline future)
+                    :and (:deadline future
+                          :scheduled nil))
+              :not (:habit t))))
+
 (after! org
   (setq
-   org-super-agenda-groups '((:name "" :time-grid t)
+   org-super-agenda-groups `((:name "" :time-grid t)
                              ;; Events are not scheduled or deadlines.
                              (:name "" :and
                                     (:deadline nil
                                      :scheduled nil))
                              ;; Not a habit and not in the future
+                             (:name "\nClasses"
+                              :and (:tag "class"
+                                         ,@my/today-group))
                              (:name "\nToday"
-                              ;; Only things which are deadlines in future, but scheduled in the past or today, should show up here.
-                              :and (
-                                    :not (
-                                          :and (:scheduled future
-                                                :deadline future)
-                                          :and (:deadline future
-                                                :scheduled nil))
-                                    :not (:habit t)))
+                                    ;; Only things which are deadlines in future, but scheduled in the past or today, should show up here.
+                                    ,@my/today-group
+                                    )
                              (:name "\nHabits" :habit t)
                              (:name "\nUpcoming" :deadline future)
                              (:name "" :anything t)))
@@ -1313,7 +1327,7 @@
           org-super-agenda-header-prefix " ")))
 
 ;;;; hide drawers when org-narrow-to-indirect-buffer
-(advice-add 'org-tree-to-indirect-buffer :after (lambda () (interactive) (org-fold-hide-drawer-all)))
+(advice-add 'org-tree-to-indirect-buffer :after (lambda () (org-fold-hide-drawer-all nil)))
 ;;;; org-anki
 (use-package! org-anki)
 ;;;; consult
@@ -1505,29 +1519,29 @@
     (visual-line-mode -1))
   )
 ;;; spacious-padding https://protesilaos.com/emacs/spacious-padding
-(use-package! spacious-padding
-  :hook (text-mode . spacious-padding-mode)
-  :config
-  ;; These are the default values, but I keep them here for visibility.
-  (setq spacious-padding-widths
-        '( :internal-border-width 0
-           :header-line-width 0
-           :mode-line-width 0
-           :tab-width 1
-           :right-divider-width 4
-           :scroll-bar-width 8
-           :fringe-width 12))
-
-  ;; Read the doc string of `spacious-padding-subtle-mode-line' as it
-  ;; is very flexible and provides several examples.
-  (setq spacious-padding-subtle-frame-lines
-        `( :mode-line-active 'default
-           :mode-line-inactive vertical-border))
-
-  ;; Set a key binding if you need to toggle spacious padding.
-  (define-key global-map (kbd "<f8>") #'spacious-padding-mode)
-  (spacious-padding-mode)
-  )
+;;(use-package! spacious-padding
+;;  :hook (text-mode . spacious-padding-mode)
+;;  :config
+;;  ;; These are the default values, but I keep them here for visibility.
+;;  (setq spacious-padding-widths
+;;        '( :internal-border-width 0
+;;           :header-line-width 0
+;;           :mode-line-width 0
+;;           :tab-width 1
+;;           :right-divider-width 4
+;;           :scroll-bar-width 8
+;;           :fringe-width 12))
+;;
+;;  ;; Read the doc string of `spacious-padding-subtle-mode-line' as it
+;;  ;; is very flexible and provides several examples.
+;;  (setq spacious-padding-subtle-frame-lines
+;;        `( :mode-line-active 'default
+;;           :mode-line-inactive vertical-border))
+;;
+;;  ;; Set a key binding if you need to toggle spacious padding.
+;;  (define-key global-map (kbd "<f8>") #'spacious-padding-mode)
+;;  (spacious-padding-mode)
+;;  )
 ;;; Roam
 (after! org-roam
   (map! :mode org-mode

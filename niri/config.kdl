@@ -685,3 +685,9 @@ recent-windows {
         // Mod+Shift+grave { previous-window filter="app-id"; }
     }
 }
+
+window-rule {
+  match title="Emacs"
+  default-window-height { proportion 1.0; }
+  default-column-width { proportion 0.5; }
+}
