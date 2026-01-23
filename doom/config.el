@@ -138,7 +138,7 @@
 (map! :map 'override
       :leader
       "'" #'org-agenda
-      "X" #'doom/switch-to-scratch-buffer)
+      "x" #'org-capture)
 
 (after! which-key
   (setq which-key-idle-delay .15))
@@ -988,6 +988,9 @@
 
 (map! :leader
       "tT" #'org-timer-set-timer)
+;;;;; narrow buffer when org-clock-goto is called
+(after! org
+  (advice-add 'org-clock-goto :after #'org-tree-to-indirect-buffer))
 ;;;; org-capture TODO
 (after! org
   (setq org-capture-templates
@@ -1015,8 +1018,14 @@
                                         ;("pc" "Project-local changelog" entry
                                         ;(file+headline +org-capture-project-changelog-file "Unreleased") "* %U %?\n%i\n%a"
                                         ;:prepend t)
-          ("c" "Class Todo" entry (file+headline "todo.org" "Class")
-           "* TODO %?\nSCHEDULED: %t\n%i\n" :prepend t)
+          ("l" "Linear Algebra Todo" entry (file "Inbox.org")
+           "* TODO %? :class:linalg:\nSCHEDULED: %t\n%i\n" :prepend t)
+          ("C" "Class Todo" entry (file "Inbox.org")
+           "* TODO %? :class:\nSCHEDULED: %t\n%i\n" :prepend t)
+          ("c" "Calc Todo" entry (file "Inbox.org")
+           "* TODO %? :class:calc:\nSCHEDULED: %t\n%i\n" :prepend t)
+          ("d" "Differential Equations Todo" entry (file "Inbox.org")
+           "* TODO %? :class:diffeq:\nSCHEDULED: %t\n%i\n" :prepend t)
           ("o" "Centralized templates for projects")
           ("ot" "Project todo" entry #'+org-capture-central-project-todo-file
            "* TODO %?\n %i\n %a" :heading "Tasks" :prepend nil)
