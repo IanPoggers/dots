@@ -253,7 +253,7 @@
   },
   "clock": {
     "interval": 1,
-    "format": "{:%H\n%M\n\n%m\n%d}",
+    "format": "{:%I\n%M\n%p\n\n%m\n%d}",
     "tooltip": true,
     "tooltip-format": "{calendar}",
     "calendar": {

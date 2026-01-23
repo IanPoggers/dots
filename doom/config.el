@@ -665,8 +665,8 @@
    ))
 ;;;; custom binds
 (map! :leader
-      :nv "SPC" (lambda () (interactive) (find-file my/notes-home))
-      :nv "I" (lambda () (interactive) (find-file (expand-file-name "Inbox.org" org-directory)))
+      :nv "SPC" (lambda () (interactive) (my/open-inbox-or-todo))
+      :nv "I" (lambda () (interactive) (find-file (expand-file-name "Index.org" org-directory)))
       )
 ;;;; How to follow file links
 (after! org
@@ -962,7 +962,7 @@
 
    org-pomodoro-ticking-sound-states '(:pomodoro)
 
-   org-pomodoro-short-break-length 0
+   org-pomodoro-short-break-length 7
    org-pomodoro-manual-break t
    org-pomodoro-length 30
 
