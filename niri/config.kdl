@@ -395,6 +395,7 @@ binds {
     Mod+F hotkey-overlay-title="Run the File Manager" { spawn "thunar"; }
     Mod+X hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
     Mod+B hotkey-overlay-title="Run web browser: firefox" { spawn "firefox"; }
+    Mod+Semicolon hotkey-overlay-title="Open Calendar" { spawn-sh "firefox 'https://calendar.google.com/calendar/u/0/r/customday'"; }
     Mod+Y hotkey-overlay-title="Do calculations" { spawn-sh "rofi -show calc"; }
     Mod+Apostrophe hotkey-overlay-title="Open Emacsclient" { spawn-sh "emacsclient -c -a ''"; }
     Mod+Shift+Apostrophe hotkey-overlay-title="Open Org-agend in Emacs" { spawn-sh "emacsclient -a '' -r --eval '(org-agenda nil \"d\")'"; }

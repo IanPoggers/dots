@@ -194,7 +194,6 @@
                   (t (string-lessp a b)))))
      :contents-sources
      (list
-      (calfw-org-create-source nil "org" "Orange")  ; org-agenda source
       (calfw-ical-create-source
        "https://calendar.google.com/calendar/ical/jamesipogue%40gmail.com/private-405fed4d44887c1fb303de8d0e6c7a0d/basic.ics"
        "gcal"
@@ -968,6 +967,7 @@
    org-pomodoro-length 30
 
    org-pomodoro-ticking-sound-p t
+   org-pomodoro-tick-hook nil
 
    ;; I just find it annoying that the stop sound and the tick
    ;; play at the same time when the pomo length is an integer
@@ -1327,7 +1327,10 @@
           org-super-agenda-header-prefix " ")))
 
 ;;;; hide drawers when org-narrow-to-indirect-buffer
-(advice-add 'org-tree-to-indirect-buffer :after (lambda () (org-fold-hide-drawer-all nil)))
+(advice-add 'org-tree-to-indirect-buffer :after
+            (lambda (&rest _args) 
+              (interactive) 
+              (org-fold-hide-drawer-all)))
 ;;;; org-anki
 (use-package! org-anki)
 ;;;; consult

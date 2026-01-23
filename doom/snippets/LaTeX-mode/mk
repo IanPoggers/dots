@@ -1,7 +1,6 @@
 # -*- mode: snippet -*-
-# name: Inline Math
+# name: mk
 # uuid: mk
 # key: mk
-# condition: (and (not (texmathp)) (quote auto))
 # --
 \\($0\\)

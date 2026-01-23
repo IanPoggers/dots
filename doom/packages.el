@@ -135,3 +135,5 @@
 (package! xr)
 
 (package! f)
+
+(package! kaolin-themes)
