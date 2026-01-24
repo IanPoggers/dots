@@ -1,10 +1,12 @@
 ;;; config.el -*- lexical-binding: t; -*-
+;;; Make sure the f.el lib is avaliable
+(use-package! f)
 ;;; defining global variables
 ;; These are variables that will be used later
-(setq org-directory (expand-file-name "~/org/")
-      org-roam-directory (expand-file-name "~/org/Roam/"))
+(setq org-directory "~/Dropbox/org/"
+      org-roam-directory (f-join org-directory "Roam"))
 (setq
- my/notes-home (expand-file-name "Index.org" org-directory))
+ my/notes-home (f-join org-directory "Index.org"))
 
 (setq
  my/header "Iosevka Nerd Font Mono"
@@ -13,20 +15,22 @@
  my/bullet "Inter"
  my/pretty "Inter")
 ;;; Terminal Emacs configuation
-;; NOTE I don't THINK this will have any impact
-;; on anything in GUI windows, only terminals.
-(unless (display-graphic-p)
-  (xterm-mouse-mode 1))
+;; Cool mouse interaction while in terminal
+(xterm-mouse-mode 1)
 ;;; Don't display output of async cmds with no output.
 (setq async-shell-command-display-buffer nil)
-;;; Make sure the f.el lib is avaliable
-(use-package! f)
 ;;; General Emacs
 (global-auto-revert-mode 1)
-(smartparens-global-mode -1)
+
+;; NOTE for some god forsaken reason this is the only way to turn it off
+(remove-hook 'doom-first-buffer-hook #'smartparens-global-mode)
+
 (setq-default search-invisible nil)
-(after! smartparens (setq smartparens-global-mode nil))
+(after! smartparens
+  (setq smartparens-global-mode nil)
+  (smartparens-global-mode -1))
 (setq-default tab-width 2)
+(add-hook! 'emacs-lisp-mode-hook (lambda () smartparens-mode -1))
 (setq! tab-width 2)
 
 (setq! select-enable-clipboard t)
@@ -42,14 +46,6 @@
  :nv "gj" #'outline-forward-same-level)
 (global-hl-line-mode -1)
 (auto-save-visited-mode)
-
-(defun my/inbox-has-headings-p ()
-  ;; Returns t if grep finds a match (exit code 0), nil otherwise
-  (interactive)
-  (eq 0 (call-process "grep" nil nil nil
-                      "-q"           ;; Silent mode (just return exit code)
-                      "^\\*\\+ "     ;; Regex: Start of line, 1+ stars, space
-                      (expand-file-name "Inbox.org" org-directory))))
 
 (defun my/inbox-has-headings-p ()
   ;; Returns t if grep finds a match (exit code 0), nil otherwise
@@ -126,7 +122,7 @@
 
 (add-hook 'org-mode-hook
           (lambda ()
-            (setq-local line-spacing 0.1)))
+            (setq-local line-spacing 0.08)))
 
 ;;;; scratch buffer
 (setq! doom-scratch-initial-major-mode 'emacs-lisp-mode)
@@ -300,8 +296,8 @@
 
 ;;;; Fonts and Themes
 (setq!
- doom-font (font-spec :family my/monospace :size 21)
- doom-variable-pitch-font (font-spec :family my/variable :size 21))
+ doom-font (font-spec :family my/monospace :size 20)
+ doom-variable-pitch-font (font-spec :family my/variable :size 20))
 
 
 ;;(setq! doom-theme 'catppuccin)
@@ -340,6 +336,7 @@
 
   (pushnew! mixed-pitch-fixed-pitch-faces
             'org-superstar-leading 'org-date
+            'font-lock-comment-face
             'org-list-dt 'org-document-info
             'warning 'org-property-value 'org-special-keyword
             'org-drawer 'org-cite-key  'org-hide
@@ -381,7 +378,6 @@
 (add-hook 'conf-unix-mode-hook #'adaptive-wrap-prefix-mode)
 ;;; rust-mode
 (use-package! rust-mode
-  :hook (rust-mode . eglot)
   :config
   (setq rust-format-on-save t
         rust-mode-treesitter-derive t)
@@ -411,13 +407,14 @@
 (setq
  +fold-ellipsis " ·" ;; includes non-breaking space
  org-ellipsis " ·" ;; includes non-breaking space
- org-archive-location "~/org/.archive/%s_archive::")
+ org-archive-location (f-join org-directory ".archive/%s_archive::"))
 
 (after! evil-org
   (remove-hook 'org-tab-first-hook #'+org-cycle-only-current-subtree-h)
   (setq org-cycle-emulate-tab nil))
 
-(after! org
+(use-package! org
+  :config
   (add-hook! 'org-follow-link-hook #'org-reveal)
 
   (setq
@@ -426,13 +423,18 @@
    org-element-use-cache nil ; NOTE with this on, indirect buffers break
    org-indirect-buffer-display 'current-window ; TODO should this be set to something else?
    org-link-file-path-type 'relative
+
+   org-auto-align-tags t
+
+   ;; NOTE makes it so that refile prepends item instead of append.
+   org-reverse-note-order t
    org-habit-show-habits t
    org-habit-scheduled-past-days nil
-   org-hide-emphasis-markers t
+   org-hide-emphasis-markers nil
    org-export-with-smart-quotes nil
    org-export-with-special-strings nil
    org-display-internal-link-with-indirect-buffer nil
-   org-link-use-indirect-buffer-for-internals t ;; why are these two separate variables??
+   org-link-use-indirect-buffer-for-internals t
    org-log-into-drawer t
    org-startup-indented t
    org-export-with-tags nil
@@ -441,9 +443,11 @@
    org-pretty-entities t
    org-custom-properties '("AUTHOR" "EXPORT_LATEX_CLASS" "EXPORT_LATEX_CLASS_OPTIONS" )
    org-pretty-entities-include-sub-superscripts t
-   org-todo-keywords '((sequence  "TODO(t)" "WAIT(w)" "NEXT(n)" "|" "DONE(d)" "KILL(k)")
-                                        ;(sequence "READING(g)" "TOREAD(r)" "|" "DNF" "READ(R)")
-                       )
+   org-todo-keywords '((type "NEXT(n)" "|")
+                       (type "TODO(t)" "|" "DONE(d)")
+                       (type "KILL(k)"))
+   org-todo-repeat-to-state "TODO"
+   org-use-fast-todo-selection nil
    org-use-sub-superscripts t
    org-export-with-section-numbers t
    org-export-with-toc nil
@@ -488,14 +492,14 @@
 (after! (:and org color)
 
   (dolist (face
-           '((org-level-1 . 1.1)
-             (org-level-2 . 1.1)
-             (org-level-3 . 1.1)
-             (org-level-4 . 1.1)
-             (org-level-5 . 1.1)
-             (org-level-6 . 1.1)
-             (org-level-7 . 1.1)
-             (org-level-8 . 1.1)))
+           '((org-level-1 . 1.05)
+             (org-level-2 . 1.05)
+             (org-level-3 . 1.05)
+             (org-level-4 . 1.05)
+             (org-level-5 . 1.05)
+             (org-level-6 . 1.05)
+             (org-level-7 . 1.05)
+             (org-level-8 . 1.05)))
     ;; Decided to not make them larger, for now. But idk i may change my mind.
     ;;'((org-level-1 . 1.35)
     ;;  (org-level-2 . 1.30)
@@ -530,6 +534,7 @@
 
   (set-face-attribute 'org-done nil
                       :family my/monospace
+                      :slant 'normal
                       :foreground "sea green")
 
   (set-face-attribute 'org-ellipsis nil
@@ -545,6 +550,7 @@
 
   (set-face-attribute 'org-todo nil
                       :weight 'bold
+                      :foreground "#9cc460"
                       :slant 'normal
                       :family my/monospace)
 
@@ -557,9 +563,6 @@
                       :slant 'normal)
 
   (set-face-attribute 'warning nil
-                      :slant 'normal)
-
-  (set-face-attribute 'org-done nil
                       :slant 'normal)
 
   (set-face-attribute 'underline nil
@@ -626,6 +629,31 @@
 
 (my/math/load-prettify-symbols)
 
+;;;; custom functions related to org
+;;;;; custom function to convert links when refiling to new path.
+(defun my/convert-links (oldpath)
+  "When refiling, if the new path is in a different parent directory from the OLDPATH, relative links will break. This was written to automatically fix this."
+  (interactive "DPath from which this file was moved: ")
+  (goto-char (point-min))
+  (while (search-forward-regexp "\\[\\[file:\\(.*?\\)\\]\\]")
+    (let ((path (match-string 1)))
+      (unless (f-absolute-p path)
+        (replace-match
+         (concat "[[file:" (f-join (f-relative oldpath) path) "]]"))))))
+;;;;; custom function to sort toplevel headings in a file
+(defun my/sort-top-level ()
+  (interactive)
+  (org-map-entries (λ!
+                    ;; NOTE this function stops when things are already sorted, which is gay. ~ignore-errors~ prevents that.
+                    (ignore-errors (org-sort-entries nil ?t))
+                    (ignore-errors (org-sort-entries nil ?p))
+                    (ignore-errors (org-sort-entries nil ?o)))
+                   "LEVEL=1")
+  (org-cycle '(16)))
+
+(map! :map 'org-mode-map
+      :g "C-c s" #'my/sort-top-level)
+
 ;;;; org-mouse
 (use-package! org-mouse)
 ;;;; fuck middle click paste
@@ -640,7 +668,7 @@
  jit-lock-defer-time 0 ; NOTE 0 --> Defer when pending input.
  )
 
-;;;; org-appear
+;;;; org-appear (hide things unless cursor is near)
 (use-package! org-appear
   :hook
   (org-mode . org-appear-mode)
@@ -666,7 +694,10 @@
 ;;;; custom binds
 (map! :leader
       :nv "SPC" (lambda () (interactive) (my/open-inbox-or-todo))
-      :nv "I" (lambda () (interactive) (find-file (expand-file-name "Index.org" org-directory)))
+      :nv "I" (lambda () (interactive) (find-file (f-join org-directory "Inbox.org")))
+      :nv "N" (lambda () (interactive) (find-file (f-join org-directory "notes.org")))
+      :nv "T" (lambda () (interactive) (find-file (f-join org-directory "todo.org")))
+      :nv "R" (lambda () (interactive) (find-file (f-join org-directory "reading.org")))
       )
 ;;;; How to follow file links
 (after! org
@@ -674,16 +705,6 @@
 ;;;; org-links
 (after! org
   (setq org-id-link-to-org-use-id 'create-if-interactive))
-;;;; custom function to convert links when refiling to new path.
-(defun my/convert-links (oldpath)
-  "When refiling, if the new path is in a different parent directory from the OLDPATH, relative links will break. This was written to automatically fix this."
-  (interactive "DPath from which this file was moved: ")
-  (goto-char (point-min))
-  (while (search-forward-regexp "\\[\\[file:\\(.*?\\)\\]\\]")
-    (let ((path (match-string 1)))
-      (unless (f-absolute-p path)
-        (replace-match
-         (concat "[[file:" (f-join (f-relative oldpath) path) "]]"))))))
 ;;;; TODO hierarchical tags in org-mode
 (after! org
   (setq
@@ -777,7 +798,7 @@
 (after! org-attach
   (setq
    org-attach-dir-relative t
-   org-attach-directory "~/org/data"
+   org-attach-directory (f-join org-directory "data/")
    org-attach-store-link-p 'file))
 ;;;; org-latex
 (after! org
@@ -798,20 +819,20 @@
    org-fold-catch-invisible-edits 'show-and-error
 
    org-modern-hide-stars nil
-   org-modern-timestamp t
+   org-modern-timestamp nil
    org-modern-checkbox nil
-   org-modern-keyword nil
+   org-modern-keyword t
    org-modern-star nil
 
-   org-modern-tag nil
+   org-modern-tag t
    org-modern-priority nil
    org-modern-todo nil
-   org-modern-table nil
+   org-modern-table t
 
    org-agenda-block-separator ?─
    )
   )
-(global-org-modern-mode -1)
+(global-org-modern-mode 1)
 ;;;; org-latex-preview
 ;; code for centering LaTeX previews -- a terrible idea
 ;; TODO enable latex previews in org-roam and latex buffers (use xenops)
@@ -991,23 +1012,31 @@
 ;;;;; narrow buffer when org-clock-goto is called
 (after! org
   (advice-add 'org-clock-goto :after #'org-tree-to-indirect-buffer))
+;;;;; When un-narrowing, go to the top and scroll down by one line (to reveal what is around the previously narrowed bit.
+(advice-add 'doom/widen-indirectly-narrowed-buffer :before
+            (lambda ()
+              (interactive)
+              (goto-char (point-min))
+              (scroll-down-line)))
+
+
 ;;;; org-capture TODO
 (after! org
   (setq org-capture-templates
-        '(("u" "Unscheduled todo" entry (file "Inbox.org")
+        '(("t" "Unscheduled todo" entry (file "Inbox.org")
            "* TODO %?\n%i\n" :prepend t)
-          ("U" "Unscheduled Linked todo" entry (file "Inbox.org")
-           "* TODO %?%i\n%a" :prepend t)
-          ("t" "Personal todo" entry (file "Inbox.org")
+          ("T" "Unscheduled Linked todo" entry (file "Inbox.org")
+           "* TODO %A%?\n%i" :prepend t)
+          ("s" "Scheduled todo" entry (file "Inbox.org")
            "* TODO %?\nSCHEDULED: %t\n%i\n" :prepend t)
-          ("T" "Linked todo" entry (file "Inbox.org")
-           "* TODO %?%i\nSCHEDULED: %t\n%a" :prepend t)
+          ("S" "Linked Scheduled todo" entry (file "Inbox.org")
+           "* TODO %A%?\nSCHEDULED: %t\n%i" :prepend t)
           ("h" "Personal habit" entry (file "habit.org")
-           "* TODO [#D] %?\nSCHEDULED: %t\n:PROPERTIES:\n:STYLE: habit\n:END:\n%i\n" :prepend t)
+           "* TODO [#D] %?\nSCHEDULED: <%<%Y-%m-%d %a> .+1d>\n:PROPERTIES:\n:STYLE: habit\n:END:\n%i\n" :prepend t)
           ("n" "Personal notes" entry (file "Inbox.org")
            "* %?\n%i\n" :prepend t :jump-to-captured t)
           ("N" "Linked note" entry (file "Inbox.org")
-           "* %?\n%i\n%a" :prepend t :jump-to-captured t)
+           "* %A%?\n%i" :prepend t :jump-to-captured t)
                                         ;("p" "Templates for projects")
                                         ;("pt" "Project-local todo" entry
                                         ;(file+headline +org-capture-project-todo-file "Inbox") "* TODO %?\n%i\n%a" :prepend
@@ -1019,13 +1048,13 @@
                                         ;(file+headline +org-capture-project-changelog-file "Unreleased") "* %U %?\n%i\n%a"
                                         ;:prepend t)
           ("l" "Linear Algebra Todo" entry (file "Inbox.org")
-           "* TODO %? :class:linalg:\nSCHEDULED: %t\n%i\n" :prepend t)
+           "* TODO %? :class:linalg:\n%i\n" :prepend t)
           ("C" "Class Todo" entry (file "Inbox.org")
-           "* TODO %? :class:\nSCHEDULED: %t\n%i\n" :prepend t)
+           "* TODO %? :class:linalg:\n%i\n" :prepend t)
           ("c" "Calc Todo" entry (file "Inbox.org")
-           "* TODO %? :class:calc:\nSCHEDULED: %t\n%i\n" :prepend t)
+           "* TODO %? :class:calc:\n%i\n" :prepend t)
           ("d" "Differential Equations Todo" entry (file "Inbox.org")
-           "* TODO %? :class:diffeq:\nSCHEDULED: %t\n%i\n" :prepend t)
+           "* TODO %? :class:diffeq:\n%i\n" :prepend t)
           ("o" "Centralized templates for projects")
           ("ot" "Project todo" entry #'+org-capture-central-project-todo-file
            "* TODO %?\n %i\n %a" :heading "Tasks" :prepend nil)
@@ -1043,7 +1072,7 @@
    org-journal-file-format "%Y.org"
    org-journal-time-format "" ; NOTE 3-char weekday: "%a"
    org-journal-date-format "%b %e"
-   org-journal-dir (expand-file-name "~/org/journal/")
+   org-journal-dir (f-join org-directory "journal/")
    org-journal-file-type 'yearly)
   )
 
@@ -1137,8 +1166,8 @@
    org-enforce-todo-checkbox-dependencies t
    org-enforce-todo-dependencies t
    org-agenda-dim-blocked-tasks nil
-   org-agenda-scheduled-leaders '("Schd." "S.%2dx")
-   org-agenda-deadline-leaders '("Dedl." "In%2dd" "D.%2dx")
+   org-agenda-scheduled-leaders '("Sch." "S%2dx")
+   org-agenda-deadline-leaders '("Ddl." "In%2dd" "D%2dx")
    org-habit-show-habits t
    org-agenda-format-date "%b %d ─── %a"
    org-agenda-timerange-leaders '("" "     ")
@@ -1174,6 +1203,8 @@
 
   (setq org-agenda-sorting-strategy
         '((agenda
+           time-up
+           todo-state-up
            habit-down
            priority-down
            timestamp-up
@@ -1193,7 +1224,7 @@
                                   (default . ancestors))
    org-priority-start-cycle-with-default nil
    org-agenda-start-day nil
-   org-agenda-window-setup 'only-window
+   org-agenda-window-setup 'current-window
    org-agenda-restore-windows-after-quit t
    org-deadline-warning-days 14 ;; TODO Change once i stop using so many deadlines
    
@@ -1208,6 +1239,57 @@
    org-agenda-start-with-follow-mode nil)
 
 
+  
+
+  (set-popup-rule! "^\\*Org Agenda" :ignore t)
+
+
+  (add-hook! 'org-agenda-mode-hook :append
+    (visual-line-mode -1)
+    (ultra-scroll-mode 1)
+    )
+  )
+
+
+(after! org-agenda
+  (evil-set-initial-state 'org-agenda-mode 'emacs)
+  (evil-set-initial-state 'evil-org-agenda-mode 'emacs)
+  (add-to-list 'evil-emacs-state-modes 'org-agenda-mode))
+
+;;;;; org-super-agenda groups
+(setq my/today-group
+      '(:not (:and (:scheduled future
+                    :deadline future)
+                   :and (:deadline future
+                         :scheduled nil)))
+      my/today-nohabit `(:and (,@my/today-group :not (:habit t))))
+
+(after! org
+  (setq
+   org-super-agenda-groups `((:name "" :time-grid t)
+                             ;; Events are not scheduled or deadlines.
+                             (:name "" :todo nil)
+                             ;; Not a habit and not in the future
+                             (:name "\nNext Items"
+                              :todo "NEXT")
+                             (:name "\nDeadlines"
+                              :and (:deadline t
+                                    :not (:deadline future)))
+                             (:name "\nClass"
+                              :and (:tag "class"
+                                         ,@my/today-nohabit))
+                             (:name "\nMisc"
+                                    ;; Only things which are deadlines in future, but scheduled in the past or today, should show up here.
+                                    ,@my/today-nohabit
+                                    )
+                             (:name "\nUpcoming Deadlines" :deadline future)
+                             (:name "\nHabits" :habit t)
+                             (:name "" :anything t)))
+  )
+
+
+;;;;; org-agenda custom commands
+(after! org
   (setq
    org-agenda-custom-commands
    '(("'" "Default Agenda IDK" agenda "" ((org-deadline-warning-days 7)
@@ -1234,32 +1316,30 @@
               (org-agenda-overriding-header "Currently Reading:")
               (org-agenda-view-columns-initially nil)
               (org-agenda-prefix-format '((todo . " %(format \"%-18s\" (or (org-entry-get nil \"AUTHOR\" t) \"\")) %i %?-12t %s")))))))
-     ("W" "Weekly Super Agenda" agenda ""
-      ((org-agenda-window-setup 'current-window)
-       (org-deadline-warning-days 0)
-       (org-scheduled-past-days 0)
-       (org-agenda-time-grid '((daily require-timed remove-match) (800 1000 1200 1400 1600 1800) "......" "----------------"))
-       (org-super-agenda-groups
-        '((:name "" :time-grid t)
-          (:name "Class" :tag "class")
-          (:name "Habits" :habit t)))))
+
      ("h" "Habits" agenda ""
       ((org-agenda-span 1)
        (org-agenda-sorting-strategy
-        '((agenda habit-up)))
+        '((agenda priority-down timestamp-up)))
        (org-habit-show-habits-only-for-today t)
        (org-habit-show-all-today t)
        (org-habit-show-habits t)
        (org-super-agenda-groups
-        '((:discard (:not (:habit t)))
-          (:habit t)))))
+        `((:discard (:not (:habit t)))
+          (:name "\nHabits"
+           :and (,@my/today-group
+                 :not (:scheduled future)))
+          (:name "\n\nDone Habits" :habit t)))))
+
      ("d" "Daily Super Agenda" agenda ""
       ((org-agenda-span 1)))
-     ("n" "Agenda and all TODOs" ((agenda "") (alltodo "")))
+
      ("r" "Reading & To-Read" ((todo "READING") (todo "TOREAD") (todo "DNF"))
       ((org-agenda-view-columns-initially nil)
+       (org-agenda-todo-keyword-format "")
        (org-agenda-prefix-format '((todo . " %(format \"%-18s\" (or (org-entry-get nil \"AUTHOR\" t) \"\")) %i %?-12t %s"))))
       (org-agenda-overriding-header ""))
+
      ;; lowercase c displays todays class agenda grouped by heading.
      ("c" "Classes" agenda ""
       ((org-super-agenda-groups
@@ -1268,54 +1348,10 @@
           (:auto-parent t)
           ))
        )
-      )))
-
-  (set-popup-rule! "^\\*Org Agenda" :ignore t)
-
-
-  (add-hook! 'org-agenda-mode-hook :append
-    (visual-line-mode -1)
-    (ultra-scroll-mode 1)
-    )
-  )
-
-
-(after! org-agenda
-  (evil-set-initial-state 'org-agenda-mode 'emacs)
-  (evil-set-initial-state 'evil-org-agenda-mode 'emacs)
-  (add-to-list 'evil-emacs-state-modes 'org-agenda-mode))
-
-;;;;; org-super-agenda groups
-(setq my/today-group
-      '(:and (
-              :not (
-                    :and (:scheduled future
-                          :deadline future)
-                    :and (:deadline future
-                          :scheduled nil))
-              :not (:habit t))))
-
+      ))))
+;;;;; Tentatively setting org TODO statements to not appear in agenda
 (after! org
-  (setq
-   org-super-agenda-groups `((:name "" :time-grid t)
-                             ;; Events are not scheduled or deadlines.
-                             (:name "" :and
-                                    (:deadline nil
-                                     :scheduled nil))
-                             ;; Not a habit and not in the future
-                             (:name "\nClasses"
-                              :and (:tag "class"
-                                         ,@my/today-group))
-                             (:name "\nToday"
-                                    ;; Only things which are deadlines in future, but scheduled in the past or today, should show up here.
-                                    ,@my/today-group
-                                    )
-                             (:name "\nHabits" :habit t)
-                             (:name "\nUpcoming" :deadline future)
-                             (:name "" :anything t)))
-  )
-
-
+  (setq org-agenda-todo-keyword-format "%1.1s"))
 ;;;;; org-agend entry text
 (after! org-agenda
   (setq org-agenda-entry-text-maxlines 10
@@ -1488,6 +1524,28 @@
                                         ; Dired bufffers#' That is why we bind it here to the `global-map'.
       :nv     "r" #'denote-rename-file
       :nv     "R" #'denote-rename-file-using-front-matter)
+;;;; add typst file type to denote
+(after! denote 
+  (add-to-list 'denote-file-types
+               '(typst
+                 :extension ".typ"
+                 :front-matter "#import \"@local/handout:0.0.1\": *
+#import \"@preview/theorion:0.3.3\": *
+#import \"@preview/mannot:0.3.0\": *
+#import \"@preview/marginalia:0.2.3\" as marginalia: *
+#import \"@preview/pillar:0.3.3\"as pillar:  *
+#import \"@preview/tabbyterms:0.1.0\" as tabbyterms: *
+
+#show: doc => template(title: \"Chemistry Notes\", doc)
+"))
+  )
+;;;; add latex file type to denote
+;; TODO!!
+(after! denote
+  (add-to-list 'denote-file-types
+               '(LaTeX
+                 :extension ".tex"
+                 :front-matter "")))
 ;;;; consult-notes
 (use-package! consult-notes
   :config
@@ -1559,11 +1617,10 @@
   (map! :mode org-mode
         :leader
         :nv "mrN" #'org-roam-extract-subtree)
-  (setq! org-roam-directory (expand-file-name "~/org/Roam/")))
+  (setq! org-roam-directory (f-join org-directory "Roam")))
 ;;; typst-ts
 (use-package! typst-ts-mode
   :mode "\\.typ\\'"
-  :hook (typst-ts-mode . eglot-ensure)
   :config
   (setq
    typst-ts-watch-options nil
@@ -1573,14 +1630,6 @@
         :nv "]]" #'outline-next-heading
         :nv "[[" #'outline-previous-heading)
   (keymap-set typst-ts-mode-map "C-c C-c" #'typst-ts-tmenu))
-
-(with-eval-after-load 'eglot
-  (with-eval-after-load 'typst-ts-mode
-    (add-to-list 'eglot-server-programs
-                 `((typst-ts-mode) .
-                   ,(eglot-alternatives `(,typst-ts-lsp-download-path
-                                          "tinymist"
-                                          "typst-lsp"))))))
 
 ;;; typst-preview
 (use-package! typst-preview
@@ -1602,17 +1651,16 @@
 ;;; ticktick.el
 (use-package! ticktick
   :config (setq ticktick-client-id "your-client-id"
-                ticktick-sync-file "~/org/ticktick.org"
+                ticktick-sync-file (f-join org-directory "ticktick.org")
                 ticktick-client-secret "your-client-secret"))
 
 ;;; Olivetti mode
 (use-package! olivetti
   :config
-  (setq-default olivetti-body-width 90)
-  (add-hook 'org-mode-hook
-            (λ! (olivetti-mode 1))))
-
-(setq! fill-column 90)
+  (setq-default olivetti-body-width 100)
+  (add-hook 'org-mode-hook (λ! (olivetti-mode 1)))
+  )
+(setq! fill-column 100)
 
 
 ;;;; No Olivetti in scratch buffers
@@ -1665,12 +1713,7 @@
   (dolist
       (f
        (directory-files org-directory t
-                        "^.*\\.\\(png\\|pdf\\|tex\\|aux\\|bbl\\|log\\|out\\|fls\\|fdb_latexmk\\|synctex\\.gz\\)$"))
-    (delete-file f))
-  (dolist
-      (f
-       (directory-files denote-directory t
-                        "^.*\\.\\(tex\\|aux\\|bbl\\|log\\|out\\|fls\\|fdb_latexmk\\|synctex\\.gz\\)$"))
+                        "^.*\\.\\(png\\|pdf\\|tex\\|aux\\|bbl\\|log\\|out\\|fls\\|fdb_latexmk\\|synctex\\.gz\\|organice-bak\\)$"))
     (delete-file f)))
 
 (map! :map doom-leader-notes-map
@@ -1763,7 +1806,6 @@
       :nv "M-{" #'my/prev-and-open
       :nv "M-}" #'my/next-and-open
       :nv "M-o" #'my/open-subtree-only
-      :nv "zp"  #'my/open-subtree-only
       :nv "M-c" #'+org/close-fold
       :nv "M-<tab>" #'outline-show-subtree
       )
