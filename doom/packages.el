@@ -1,8 +1,13 @@
 ;; -*- no-byte-compile: t; -*-
 ;;; $DOOMDIR/packages.el
 
-;; To install a package with Doom you must declare them here and run 'doom sync'
-;; on the command line, then restart Emacs for the changes to take effect -- or
+;; To install a package:
+;;
+;;   1. Declare them here in a `package!' statement,
+;;   2. Run 'doom sync' in the shell,
+;;   3. Restart Emacs.
+;;
+;; Use 'C-h f package\!' to look up documentation for the `package!' macro.
 
 
 ;; To install SOME-PACKAGE from MELPA, ELPA or emacsmirror:
@@ -47,93 +52,9 @@
 ;; (unpin! pinned-package another-pinned-package)
 ;; ...Or *all* packages (NOT RECOMMENDED; will likely break things)
 ;; (unpin! t)
-;;
-;;
-(package! org :recipe
-  (:host nil :repo "https://git.tecosaur.net/mirrors/org-mode.git" :remote "mirror" :fork
-   (:host nil :repo "https://git.tecosaur.net/tec/org-mode.git" :branch "dev" :remote "tecosaur")
-   :files
-   (:defaults "etc")
-   :build t :pre-build
-   (with-temp-file "org-version.el"
-     (require 'lisp-mnt)
-     (let
-         ((version
-           (with-temp-buffer
-             (insert-file-contents "lisp/org.el")
-             (lm-header "version")))
-          (git-version
-           (string-trim
-            (with-temp-buffer
-              (call-process "git" nil t nil "rev-parse" "--short" "HEAD")
-              (buffer-string)))))
-       (insert
-        (format "(defun org-release () \"The release version of Org.\" %S)\n" version)
-        (format "(defun org-git-version () \"The truncate git commit hash of Org mode.\" %S)\n" git-version)
-        "(provide 'org-version)\n"))))
-  :pin nil)
 
-(unpin! org)
-(package! ox-typst
-  :recipe (:host github :repo "jmpunkt/ox-typst"))
-(package! org-typst-preview
-  :recipe (:host github :repo "remimimimimi/org-typst-preview.el"))
-(package! typst-preview
-  :recipe (:host github :repo "havarddj/typst-preview.el"))
-(package! websocket)
-(package! typst-ts-mode)
-(package! org-timeblock
-  :recipe (:host github :repo "ichernyshovvv/org-timeblock"))
-(package! org-recur)
-(package! org-roam)
-(package! catppuccin-theme)
+(package! focus)
 (package! org-download)
+
 (package! mixed-pitch)
-(package! howm)
-(package! nov)
-(package! org-remark)
-(package! visual-fill-column)
-(package! org-superstar)
-(package! auto-dim-other-buffers)
-(package! org-modern)
-(package! org-fragtog)
-(package! vimish-fold)
-(package! tikz)
-(package! evil-vimish-fold)
-(package! zotxt)
-
-(package! denote)
-(package! consult-notes)
-(package! denote-org)
-;;(package! consult-denote) NOTE this shit doesn't work
-
-(package! denote-menu)
-(package! denote-explore)
-
-(package! whisper
-  :recipe (:host github :repo "natrys/whisper.el"))
 (package! olivetti)
-(package! org-alert)
-(package! org-super-agenda)
-(package! ticktick)
-(package! calibredb)
-(package! org-books)
-(package! org-ql)
-(package! ultra-scroll)
-(package! org-appear)
-
-(package! spacious-padding)
-
-(package! ox-tufte)
-
-(package! kdl-mode)
-
-(package! org-anki)
-
-(package! rainbow-delimiters)
-
-(package! xr)
-
-(package! f)
-
-(package! kaolin-themes)

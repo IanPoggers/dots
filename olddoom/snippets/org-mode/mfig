@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: Margin Figure
+# uuid: mfig
+# key: mfig
+# condition: t
+# --
+#+caption:
+#+begin_marginfigure
+$0
+#+end_marginfigure

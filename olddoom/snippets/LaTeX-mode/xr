@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: xrightarrow
+# uuid: xr
+# key: xr
+# condition: (texmathp)
+# --
+\xrightarrow{$0}
