@@ -93,27 +93,43 @@
 ;;; god i fucking hate smartparens
 (smartparens-global-mode -1)
 (remove-hook 'doom-first-buffer-hook #'smartparens-global-mode)
+;;; custom vars
+(setq my/monospace "Monospace"
+      my/variable "variable")
 ;;; org
 (use-package! org
   :init
   ;; NOTE By default, TAB does not cycle the subtree, just the current one. Why, doom, why...
   (setq org-directory "~/Dropbox/org")
 
-  (setq org-cycle-max-level 2)
+  ;; NOTE DOOM WHY DO YOU DO THIS TO ME
+  (require 'org-habit)
 
+  (setq org-habit-show-habits-only-for-today t
+        ;; I don't like the consistentcy graph, and don't want to see it.
+        +org-habit-graph-window-ratio 0
+        +org-habit-graph-padding 0)
 
-  (setq org-highlight-latex-and-related '(latex))
+  (cl-pushnew 'habit org-modules)
+
+  (setq org-cycle-max-level nil)
+
+  (setq org-indent-indentation-per-level 1)
 
   (setq org-use-fast-todo-selection nil)
-  (setq org-agenda-files (mapcar (lambda (str) (f-join org-directory str))
-                                 '("habit.org" "todo.org" "Inbox.org")))
+  (setq org-agenda-files (mapcar
+                          (lambda (str) (f-join org-directory str))
+                          '("habit.org" "todo.org" "Inbox.org" "reading.org"
+                            "notes.org")))
   :config
   (remove-hook 'org-tab-first-hook #'+org-cycle-only-current-subtree-h)
   (setq org-cycle-emulate-tab t)
 
   (setq org-link-file-path-type 'relative)
 
-  (setq org-highlight-latex-and-related '(latex))
+  (setq org-highlight-latex-and-related '(native))
+
+  (setq org-hide-emphasis-markers t)
 
   (setq
    org-cycle-emulate-tab nil
@@ -125,11 +141,119 @@
 
    org-startup-indented t))
 
+
+
+;;;; org-agenda
+(after! org
+  (setq
+   org-agenda-start-day "today"
+   )
+
+
+  (map! :map 'org-mode-map
+      :nvi "C-M-S-<return>" #'org-insert-todo-subheading)
+
+  (setq org-agenda-sorting-strategy
+        '((agenda time-up deadline-down priority-down  habit-down  category-keep)
+          (todo urgency-down category-keep)
+          (tags urgency-down category-keep)
+          (search category-keep)))
+
+  (setq org-agenda-dim-blocked-tasks nil)
+
+  (setq
+   org-agenda-skip-scheduled-repeats-after-deadline t
+   org-agenda-skip-scheduled-if-deadline-is-shown t
+   org-agenda-skip-deadline-prewarning-if-scheduled 'pre-scheduled)
+
+  (setq
+   org-agenda-skip-deadline-if-done t
+   org-agenda-skip-scheduled-if-done t
+   org-agenda-skip-timestamp-if-done nil)
+
+  (setq
+   org-enforce-todo-checkbox-dependencies t
+   org-enforce-todo-dependencies t))
+;;;;; keywords
+(after! org
+  (setq org-todo-keywords '((type "TODO(t)" "NEXT(n)" "|" "DONE(d)")
+                            (type "KILL(k)"))))
+
+;;;; prettify-symbols
+(after! org
+  (setq org-pretty-entities t
+        org-pretty-entities-include-sub-superscripts nil)
+
+  (add-hook 'org-mode-hook #'prettify-symbols-mode))
+;;;;; bindings for evil-org-agenda-mode
+(after! evil-org-agenda
+  (map! :mode evil-org-agenda-mode
+      :mvi "w" #'org-save-all-org-buffers
+      :mvi "S" #'org-agenda-schedule
+      :mvi "R" #'org-agenda-refile
+      ;; since the previous one overwrites the binding for
+      :mvi "s\\" #'org-agenda-filter-remove-all
+      :mvi "D" #'org-agenda-deadline
+      :mvi "j" #'org-agenda-next-item
+      :mvi "k" #'org-agenda-previous-item))
+
 ;;;; bindings
 (map! :mode org-mode
       :nv "]h" #'org-forward-heading-same-level
       :nv "[h" #'org-backward-heading-same-level)
 
+(map! :leader
+      "nh" #'+default/org-notes-headlines)
+
+;;;; org-capture-templates
+(after! org
+  (setq org-capture-templates
+        '(("t" "Unscheduled todo" entry (file "Inbox.org")
+           "* TODO %?\n%i\n" :prepend t)
+          ("T" "Unscheduled Linked todo" entry (file "Inbox.org")
+           "* TODO %? %A\n%i" :prepend t)
+          ("s" "Scheduled todo" entry (file "Inbox.org")
+           "* TODO %?\nSCHEDULED: %^t\n%i\n" :prepend t)
+          ("S" "Linked Scheduled todo" entry (file "Inbox.org")
+           "* TODO %? %A\nSCHEDULED: %^t\n%i" :prepend t)
+          ("d" "Deadline todo" entry (file "Inbox.org")
+           "* TODO %?\nDEADLINE: %^t\n%i\n" :prepend t)
+          ("D" "Linked Deadline todo" entry (file "Inbox.org")
+           "* TODO %? %A\nDEADLINE: %^t\n%i" :prepend t)
+          ("h" "Personal habit" entry (file "habit.org")
+           "* TODO [#D] %?\nSCHEDULED: <%<%Y-%m-%d %a> .+1d>\n:PROPERTIES:\n:STYLE: habit\n:END:\n%i\n" :prepend t)
+          ("n" "Personal notes" entry (file "Inbox.org")
+           "* %?\n%i\n" :prepend t :jump-to-captured t)
+          ("N" "Linked note" entry (file "Inbox.org")
+           "* %? %A\n%i" :prepend t :jump-to-captured t)
+                                        ;("p" "Templates for projects")
+                                        ;("pt" "Project-local todo" entry
+                                        ;(file+headline +org-capture-project-todo-file "Inbox") "* TODO %?\n%i\n%a" :prepend
+                                        ;t)
+                                        ;("pn" "Project-local notes" entry
+                                        ;(file+headline +org-capture-project-notes-file "Inbox") "* %U %?\n%i\n%a" :prepend
+                                        ;t)
+                                        ;("pc" "Project-local changelog" entry
+                                        ;(file+headline +org-capture-project-changelog-file "Unreleased") "* %U %?\n%i\n%a"
+                                        ;:prepend t)
+          ("l" "Linear Algebra Todo" entry (file "Inbox.org")
+           "* TODO %? :LA:\n%i\n" :prepend t)
+          ("C" "Class Todo" entry (file "Inbox.org")
+           "* TODO %? :class:\n%i\n" :prepend t)
+          ("c" "Calc Todo" entry (file "Inbox.org")
+           "* TODO %? :calc:\n%i\n" :prepend t)
+          ("d" "Differential Equations Todo" entry (file "Inbox.org")
+           "* TODO %? :diffeq:\n%i\n" :prepend t)
+          ("o" "Centralized templates for projects")
+          ("ot" "Project todo" entry #'+org-capture-central-project-todo-file
+           "* TODO %?\n %i\n %a" :heading "Tasks" :prepend nil)
+          ("on" "Project notes" entry #'+org-capture-central-project-notes-file
+           "* %U %?\n %i\n %a" :heading "Notes" :prepend t)
+          ("oc" "Project changelog" entry #'+org-capture-central-project-changelog-file
+           "* %U %?\n %i\n %a" :heading "Changelog" :prepend t)
+          ("r" "Reading Inbox" entry (file+headline "reading.org" "Inbox")
+           "* TOREAD %?\n%^{AUTHOR}p\n%i\n" :prepend t)
+          )))
 
 ;;;; org-attach
 (after! org-attach
@@ -166,15 +290,11 @@
   (remove-hook 'org-tab-first-hook #'+org-cycle-only-current-subtree-h)
   (setq org-cycle-emulate-tab nil))
 ;;;; Bind to quickly traverse up headings
-(after! org
-  (map! :mode org-mode
+(map! :mode org-mode
       :nv "zU" (lambda ()
-                 (interactive)
-                 (evil-org-top))
-      :nv "U" (lambda (arg)
-                (interactive "pGo up bitch")
-                (org-up-heading-all arg))))
-
+               (interactive)
+               (evil-org-top))
+      :nv "U" (λ! (org-up-heading-or-point-min)))
 ;;;; org bindings idk
 (map! :mode org-mode
       :nv "zv" #'org-reveal)
@@ -182,27 +302,76 @@
 ;;;; focus.el in org-mode
 (use-package! focus
   :config
-  (mapcar (lambda (mode) (add-hook mode 'focus-mode))
-            '(org-mode-hook emacs-lisp-mode-hook LaTeX-mode-hook)))
-;;;; org-agenda
-;;;;; keywords
-(after! org
-  (setq org-todo-keywords '((type "TODO(t)" "NEXT(n)" "|" "DONE(d)")
-                            (type "KILL(k)"))))
+;;  (mapcar (lambda (mode) (add-hook mode 'focus-mode))
+  ;;          '(org-mode-hook emacs-lisp-mode-hook LaTeX-mode-hook))
 
-;;;;; bindings
-(map! :map 'evil-org-agenda-mode-map
-      :mnv "j" #'org-agenda-next-item
-      :mnv "k" #'org-agenda-previous-item)
+
+  ;; TODO customize this so that stuff is visible but clearly not focused
+  (set-face-attribute 'focus-unfocused nil))
+;;;; text should be a little bigger in org-mode
+;; Since I am going to be spending a considerable amount of time reading
+;; prose in this mode, I'd like it if the text is larger on the screen
+(after! org
+  (setq my/org-text-height 1.1)
+  (add-hook 'org-mode-hook (λ! (face-remap-add-relative 'default :height my/org-text-height)))
+  )
+;;;;; custom function to sort entries under toplevel headings
+(defun my/custom-org-entry-sort-algo ()
+  (interactive)
+  (ignore-errors (org-sort-entries nil ?t))
+  (ignore-errors (org-sort-entries nil ?p))
+  (ignore-errors (org-sort-entries nil ?o))
+  ;; Put NEXT entries to the top, even if they
+  ;; aren't the first in the keyword series.
+  (ignore-errors (org-sort-entries nil ?f
+                                   (lambda ()
+                                     (if (string= (org-get-todo-state) "NEXT")
+                                         0 1))
+                                   '<)))
+
+(defun my/sort-top-level ()
+  (interactive)
+  (org-map-entries 'my/custom-org-entry-sort-algo
+                   "LEVEL=1")
+  (org-cycle '(16)))
+
+(map! :map 'org-mode-map
+      :g "C-c s" #'my/sort-top-level)
+
 ;;; Aesthetic Stuff
 ;;;; Mixed-pitch
 (use-package! mixed-pitch
   :config
-  (add-hook 'mixed-pitch-mode 'variable-pitch-mode)
   (add-hook 'org-mode-hook 'mixed-pitch-mode)
   (pushnew! mixed-pitch-fixed-pitch-faces
-              'org-date 'font-lock-comment-face
-              'org-list-dt))
+            'org-superstar-leading 'org-date
+            'font-lock-comment-face
+            'org-list-dt 'org-document-info
+            'org-property-value 'org-special-keyword
+            'org-drawer 'org-cite-key  'org-hide
+            'org-link
+            'corfu-default)
+
+  (setq mixed-pitch-set-height t))
+
+(after! org
+             (dolist (face '(org-todo error warning org-link))
+               (set-face-attribute face nil
+                                        :family my/monospace))
+
+               (dolist (face '(org-level-1 org-level-2
+                org-level-3 org-level-4
+                org-level-5 org-level-6
+                org-level-7 org-level-8
+                org-document-title))
+  (set-face-attribute face nil
+                      :slant 'italic
+                      :family my/monospace))
+)
+
+
+
+
 ;;; custom functions
 ;;;; zd or z-d hides drawers
 (map! :mode org-mode
@@ -236,3 +405,69 @@
             (lambda () (setq-local evil-scroll-count 18) ))
 
   (cl-pushnew 'org-agenda-mode evil-motion-state-modes))
+
+;;; INBOX
+;;;; olivetti-mode
+(use-package! olivetti
+  :config
+  (add-hook 'org-mode-hook #'olivetti-mode)
+
+  (setq-default olivetti-body-width 100)
+
+  (map! :leader "tq" #'olivetti-mode))
+;;;; disable projectile caching cuz it makes phantom files show up in find-file
+(setq projectile-enable-caching nil)
+;;; Don't display output of async cmds with no output.
+(setq async-shell-command-display-buffer nil)
+
+;;;; org-pomodoro and org-clock
+(use-package! org-pomodoro
+  :config
+  (setq
+   org-clock-sound "~/.config/doom/assets/chime.wav"
+   org-pomodoro-format "Pomo~%s"
+   org-clock-persist t
+
+   org-pomodoro-start-sound-p t
+   org-pomodoro-start-sound "~/.config/doom/assets/gong.mp3"
+   org-pomodoro-finished-sound "~/.config/doom/assets/gong.mp3"
+   org-pomodoro-long-break-sound "~/.config/doom/assets/chime.wav"
+   org-pomodoro-short-break-sound nil
+   org-pomodoro-short-break-format "Break~%s"
+   org-pomodoro-clock-break nil
+   org-pomodoro-keep-killed-pomodoro-time t
+
+   org-pomodoro-ticking-sound-states '(:pomodoro)
+
+   org-pomodoro-short-break-length 7
+   org-pomodoro-manual-break t
+   org-pomodoro-length 30
+
+   org-pomodoro-ticking-sound-p t
+   org-pomodoro-tick-hook nil
+
+   ;; I just find it annoying that the stop sound and the tick
+   ;; play at the same time when the pomo length is an integer
+   ;; multiple of the tick time, so the frequency is 5 min + 1 second
+   ;; so that this does not happen. The tick will come 6 seconds late
+   ;; after 30 minutes: (/ 30 5) => 6
+   org-pomodoro-ticking-frequency (+ (* 60 5) 2)
+   org-pomodoro-ticking-sound "~/.config/doom/assets/tick.wav")
+
+  (map! :map 'org-agenda-mode-map
+        :e "P" #'org-pomodoro)
+  (map! :leader
+        "tp" #'org-pomodoro))
+
+(use-package! org-clock
+  :config
+  (setq org-clock-sound "~/.config/doom/assets/bell.wav"))
+
+(map! :leader
+      "tT" #'org-timer-set-timer)
+
+;;;; TODO idk
+(add-hook 'org-after-sorting-entries-or-items-hook
+          (λ!
+           (+org/close-fold)
+           (+org/open-fold)))
