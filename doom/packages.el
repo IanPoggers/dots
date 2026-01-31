@@ -58,3 +58,7 @@
 
 (package! mixed-pitch)
 (package! olivetti)
+
+(package! org-super-agenda)
+
+(package! consult-notes)

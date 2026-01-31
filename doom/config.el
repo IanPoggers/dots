@@ -85,6 +85,11 @@
   (map! :map corfu-map  "M-<TAB>" #'+corfu/move-to-minibuffer)
   (map! "M-<TAB>" #'+corfu/move-to-minibuffer))
 
+;;;; set corfu delay
+(after! corfu
+  (setq corfu-auto-delay 0.03
+        corfu-popupinfo-delay '(0.1 . 0.2)))
+
 ;;; vertico
 (use-package! vertico
   :config
@@ -114,7 +119,7 @@
 
   (setq org-cycle-max-level nil)
 
-  (setq org-indent-indentation-per-level 1)
+  (setq org-indent-indentation-per-level 2)
 
   (setq org-use-fast-todo-selection nil)
   (setq org-agenda-files (mapcar
@@ -146,20 +151,24 @@
 ;;;; org-agenda
 (after! org
   (setq
-   org-agenda-start-day "today"
-   )
+   org-agenda-start-day "today")
 
+  (setq org-habit-show-habits nil)
+
+  (setq org-agenda-window-setup 'reorganize-frame)
 
   (map! :map 'org-mode-map
       :nvi "C-M-S-<return>" #'org-insert-todo-subheading)
 
   (setq org-agenda-sorting-strategy
-        '((agenda time-up deadline-down priority-down  habit-down  category-keep)
+        '((agenda habit-down time-up deadline-up priority-down  category-keep)
           (todo urgency-down category-keep)
           (tags urgency-down category-keep)
           (search category-keep)))
 
   (setq org-agenda-dim-blocked-tasks nil)
+
+  (setq org-agenda-overriding-header "")
 
   (setq
    org-agenda-skip-scheduled-repeats-after-deadline t
@@ -174,6 +183,58 @@
   (setq
    org-enforce-todo-checkbox-dependencies t
    org-enforce-todo-dependencies t))
+;;;;; org-super-agenda-groups
+(setq
+ my/class-selector '(:tag ("class" "LA" "DE" "CAL"))
+ my/today-group
+ '(:not (:and (:scheduled future
+               :deadline future)
+              :and (:deadline future
+                    :scheduled nil)))
+ my/today-nohabit `(:and (,@my/today-group :not (:habit t))))
+
+(use-package! org-super-agenda
+  :config
+  (setq org-super-agenda-header-prefix "")
+
+  (set-face-attribute 'org-super-agenda-header nil
+                      :weight 'ultra-bold
+                      :slant 'italic)
+
+  (require 'evil-org-agenda)
+  (setq org-super-agenda-header-map evil-org-agenda-mode-map)
+
+  (org-super-agenda-mode)
+  (setq org-agenda-span 1)
+  (setq org-super-agenda-groups
+        `(;; Events are not scheduled or deadlines.
+          (:name "Inbox" :category "Inbox"
+                 :order 0)
+          (:name "Future Deadlines"
+           :and (:deadline future
+                 :not (:scheduled past :scheduled today))
+           :order 2)
+          (:name "" :auto-parent t
+           :order 1)
+          (:name "\n Habits" :habit t :order 3))))
+;;;;; org-agenda commands
+(after! org-agenda
+  (setq org-agenda-custom-commands
+  '(("n" "Agenda and all TODOs" ((agenda "") (alltodo "")))
+("h" "Habits" agenda ""
+      ((org-agenda-span 1)
+       (org-agenda-overriding-header "")
+       (org-agenda-sorting-strategy
+        '((agenda priority-down timestamp-up)))
+       (org-habit-show-habits-only-for-today nil)
+       (org-habit-show-all-today nil)
+       (org-habit-show-habits t)
+       (org-super-agenda-groups
+        `((:discard (:not (:habit t)))
+          (:name ""
+           :and (,@my/today-group
+                 :not (:scheduled future)))
+          (:discard (:habit t)))))))))
 ;;;;; keywords
 (after! org
   (setq org-todo-keywords '((type "TODO(t)" "NEXT(n)" "|" "DONE(d)")
@@ -185,9 +246,10 @@
         org-pretty-entities-include-sub-superscripts nil)
 
   (add-hook 'org-mode-hook #'prettify-symbols-mode))
-;;;;; bindings for evil-org-agenda-mode
+;;;;; maps for evil-org-agenda-mode
 (after! evil-org-agenda
   (map! :mode evil-org-agenda-mode
+       :mvi "'" #'org-agenda
       :mvi "w" #'org-save-all-org-buffers
       :mvi "S" #'org-agenda-schedule
       :mvi "R" #'org-agenda-refile
@@ -195,7 +257,8 @@
       :mvi "s\\" #'org-agenda-filter-remove-all
       :mvi "D" #'org-agenda-deadline
       :mvi "j" #'org-agenda-next-item
-      :mvi "k" #'org-agenda-previous-item))
+      :mvi "k" #'org-agenda-previous-item
+      :mvi "s/" #'org-agenda-filter))
 
 ;;;; bindings
 (map! :mode org-mode
@@ -236,13 +299,13 @@
                                         ;("pc" "Project-local changelog" entry
                                         ;(file+headline +org-capture-project-changelog-file "Unreleased") "* %U %?\n%i\n%a"
                                         ;:prepend t)
-          ("l" "Linear Algebra Todo" entry (file "Inbox.org")
+          ("l" "Linear Algebra Todo" entry (file+headline "todo.org" "Class")
            "* TODO %? :LA:\n%i\n" :prepend t)
-          ("C" "Class Todo" entry (file "Inbox.org")
+          ("C" "Class Todo" entry (file+headline "todo.org" "Class")
            "* TODO %? :class:\n%i\n" :prepend t)
-          ("c" "Calc Todo" entry (file "Inbox.org")
+          ("c" "Calc Todo" entry (file+headline "todo.org" "Class")
            "* TODO %? :calc:\n%i\n" :prepend t)
-          ("d" "Differential Equations Todo" entry (file "Inbox.org")
+          ("d" "Differential Equations Todo" entry (file+headline "todo.org" "Class")
            "* TODO %? :diffeq:\n%i\n" :prepend t)
           ("o" "Centralized templates for projects")
           ("ot" "Project todo" entry #'+org-capture-central-project-todo-file
@@ -299,6 +362,58 @@
 (map! :mode org-mode
       :nv "zv" #'org-reveal)
 
+;;;;; ox-latex
+(use-package! ox-latex
+  :after org
+  :config
+
+  (dolist (pkg '("placeins" "amsmath" "amssymb" "amsthm" "mathtools" "mathrsfs" "pgfplots" "float" "siunitx" "xfrac" "cancel"))
+    (add-to-list 'org-latex-packages-alist `("" ,pkg t)))
+
+  (add-to-list 'org-latex-classes
+               '("tufte-handout"
+                 ;; NOTE latex header goes here:
+                 "\\documentclass[letterpaper]{tufte-handout}
+\\usepackage{marginfix}
+\\setlength{\\marginparpush}{1.8em}
+\\usepackage{geometry}
+\\geometry{
+  left=0.8in,
+  textheight=9in,
+  marginparsep=0.25in, % gap between text and notes
+  marginparwidth=2.4in % width of the sidenote area
+}
+\\pagestyle{empty}"
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+
+  (add-to-list 'org-latex-classes
+               '("tufte-book"
+                 "\\documentclass[letterpaper,justified]{tufte-book}\n\\usepackage{marginfix}"
+                 ("\\chapter{%s}" . "\\chapter*{%s}")
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+  (add-to-list 'org-latex-classes
+               '("koma-article"
+                 "\\documentclass[letterpaper]{scrartcl}"
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+  (add-to-list 'org-latex-classes
+               '("twocolumn"
+                 "\\documentclass[letterpaper, twocolumn]{scrartcl}"
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+
 ;;;; focus.el in org-mode
 (use-package! focus
   :config
@@ -312,7 +427,7 @@
 ;; Since I am going to be spending a considerable amount of time reading
 ;; prose in this mode, I'd like it if the text is larger on the screen
 (after! org
-  (setq my/org-text-height 1.1)
+  (setq my/org-text-height 1.15)
   (add-hook 'org-mode-hook (λ! (face-remap-add-relative 'default :height my/org-text-height)))
   )
 ;;;;; custom function to sort entries under toplevel headings
@@ -471,3 +586,31 @@
           (λ!
            (+org/close-fold)
            (+org/open-fold)))
+;;;; custom bindings
+(map! :map 'evil-window-map
+      "O" #'delete-other-windows)
+
+
+;;;; disable global-hl-line-mode
+(global-hl-line-mode -1)
+
+;;; lsp-mode
+(use-package! lsp-mode
+  :config
+  (setq lsp-ui-doc-delay 0.1))
+
+;;; org-roam
+(use-package! org-roam
+  :init
+  (setq org-roam-directory (f-join org-directory "Roam")))
+
+;;; consult-notes
+(use-package! consult-notes
+  :config
+  (org-roam-db-sync)
+
+  (consult-notes-org-headings-mode)
+  (consult-notes-org-roam-mode)
+
+  (map! :leader
+        "n'" #'consult-notes))
