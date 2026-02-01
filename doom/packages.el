@@ -62,3 +62,7 @@
 (package! org-super-agenda)
 
 (package! consult-notes)
+
+(package! detached)
+
+(package! solaire-mode :disable t)

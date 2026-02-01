@@ -35,11 +35,13 @@
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'doom-one)
+(setq doom-theme 'doom-plain-dark)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
-(setq display-line-numbers-type 'visual)
+(setq display-line-numbers-type 'visual
+      display-line-numbers-current-absolute nil)
+(setq-default display-line-numbers-width 2)
 
 ;; If you use `org' and don't want your org files in the default location below,
 ;; change `org-directory'. It must be set before org loads!
@@ -117,6 +119,8 @@
 
   (cl-pushnew 'habit org-modules)
 
+  (setq org-indirect-buffer-display 'current-window)
+
   (setq org-cycle-max-level nil)
 
   (setq org-indent-indentation-per-level 2)
@@ -153,12 +157,12 @@
   (setq
    org-agenda-start-day "today")
 
-  (setq org-habit-show-habits nil)
+  (setq org-habit-show-habits t)
 
   (setq org-agenda-window-setup 'reorganize-frame)
 
-  (map! :map 'org-mode-map
-      :nvi "C-M-S-<return>" #'org-insert-todo-subheading)
+  (map! :map 'evil-org-mode-map
+        :nvi "C-M-S-<return>" #'org-insert-todo-subheading)
 
   (setq org-agenda-sorting-strategy
         '((agenda habit-down time-up deadline-up priority-down  category-keep)
@@ -208,15 +212,20 @@
   (setq org-agenda-span 1)
   (setq org-super-agenda-groups
         `(;; Events are not scheduled or deadlines.
+
+          ;; Discard TOREAD enties that have no
+          (:discard (:and (:todo "TOREAD"
+                           :not (:scheduled t :deadline t))))
           (:name "Inbox" :category "Inbox"
                  :order 0)
           (:name "Future Deadlines"
            :and (:deadline future
                  :not (:scheduled past :scheduled today))
-           :order 2)
+           :order 3)
           (:name "" :auto-parent t
            :order 1)
-          (:name "\n Habits" :habit t :order 3))))
+          (:name "Habits" :take (6 (:habit t)) :order 2))))
+
 ;;;;; org-agenda commands
 (after! org-agenda
   (setq org-agenda-custom-commands
@@ -316,6 +325,8 @@
            "* %U %?\n %i\n %a" :heading "Changelog" :prepend t)
           ("r" "Reading Inbox" entry (file+headline "reading.org" "Inbox")
            "* TOREAD %?\n%^{AUTHOR}p\n%i\n" :prepend t)
+          ("m" "Movie Inbox" entry (file "movies.org")
+           "* TODO %?\n%^{Tomato}p\n%^{IMDb}p" :prepend t)
           )))
 
 ;;;; org-attach
@@ -470,18 +481,15 @@
   (setq mixed-pitch-set-height t))
 
 (after! org
-             (dolist (face '(org-todo error warning org-link))
-               (set-face-attribute face nil
-                                        :family my/monospace))
+  (dolist (face '(org-todo error warning org-link))
+    (set-face-attribute face nil :family my/monospace))
 
-               (dolist (face '(org-level-1 org-level-2
-                org-level-3 org-level-4
-                org-level-5 org-level-6
-                org-level-7 org-level-8
+  (dolist (face '(org-level-1 org-level-2 org-level-3 org-level-4
+                org-level-5 org-level-6 org-level-7 org-level-8
                 org-document-title))
-  (set-face-attribute face nil
-                      :slant 'italic
-                      :family my/monospace))
+    (set-face-attribute face nil
+                        :slant 'italic
+                        :family my/monospace))
 )
 
 
@@ -590,10 +598,6 @@
 (map! :map 'evil-window-map
       "O" #'delete-other-windows)
 
-
-;;;; disable global-hl-line-mode
-(global-hl-line-mode -1)
-
 ;;; lsp-mode
 (use-package! lsp-mode
   :config
@@ -614,3 +618,28 @@
 
   (map! :leader
         "n'" #'consult-notes))
+;;; detached
+(use-package! detached
+  :init
+  (detached-init)
+  :bind (;; Replace `async-shell-command' with `detached-shell-command'
+         ([remap async-shell-command] . detached-shell-command)
+         ;; Replace `compile' with `detached-compile'
+         ([remap compile] . detached-compile)
+         ([remap recompile] . detached-compile-recompile)
+         ;; Replace built in completion of sessions with `consult'
+         ([remap detached-open-session] . detached-consult-session))
+  :custom ((detached-show-output-on-attach nil)
+           (detached-show-output-command nil)
+           (detached-terminal-data-command system-type)))
+
+
+
+;;; hl-line-mode
+(add-hook 'prog-mode-hook (λ! (hl-line-mode -1)))
+(add-hook 'text-mode-hook (λ! (hl-line-mode -1)))
+(add-hook 'org-agenda-mode-hook (λ! (hl-line-mode -1)))
+;;; focus-mode
+(use-package! focus
+  :config
+  (map! :nv "zf" #'focus-mode))
