@@ -30,12 +30,20 @@
 ;; up, `M-x eval-region' to execute elisp code, and 'M-x doom/reload-font' to
 ;; refresh your font settings. If Emacs still can't find your font, it likely
 ;; wasn't installed correctly. Font issues are rarely Doom issues!
+;;
+
+;;; custom vars
+(setq my/monospace "Iosevka Nerd Font Mono"
+      my/variable "Inter")
+
+(setq! doom-font (font-spec :family my/monospace :size 16)
+       doom-variable-pitch-font (font-spec :family my/variable :size 16))
 
 
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'doom-plain-dark)
+(setq doom-theme 'doom-nord)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
@@ -89,8 +97,10 @@
 
 ;;;; set corfu delay
 (after! corfu
+  (add-hook 'corfu-mode-hook
+            (lambda ()
   (setq corfu-auto-delay 0.03
-        corfu-popupinfo-delay '(0.1 . 0.2)))
+        corfu-popupinfo-delay '(0.05 . 0.1)))))
 
 ;;; vertico
 (use-package! vertico
@@ -100,9 +110,6 @@
 ;;; god i fucking hate smartparens
 (smartparens-global-mode -1)
 (remove-hook 'doom-first-buffer-hook #'smartparens-global-mode)
-;;; custom vars
-(setq my/monospace "Monospace"
-      my/variable "variable")
 ;;; org
 (use-package! org
   :init
@@ -126,10 +133,16 @@
   (setq org-indent-indentation-per-level 2)
 
   (setq org-use-fast-todo-selection nil)
-  (setq org-agenda-files (mapcar
-                          (lambda (str) (f-join org-directory str))
-                          '("habit.org" "todo.org" "Inbox.org" "reading.org"
-                            "notes.org")))
+
+  (setq org-agenda-files (cl-remove-duplicates (mapcar 'f-expand
+                                 (cl-union org-agenda-files
+                                 (directory-files org-directory t ".org$")))))
+
+  ;;(setq org-agenda-files (mapcar
+  ;;                        (lambda (str) (f-join org-directory str))
+  ;;                        '("habit.org" "todo.org" "Inbox.org" "reading.org"
+  ;;                          "notes.org" )))
+
   :config
   (remove-hook 'org-tab-first-hook #'+org-cycle-only-current-subtree-h)
   (setq org-cycle-emulate-tab t)
@@ -152,6 +165,10 @@
 
 
 
+;;;; org-export
+(after! org
+  (setq org-export-with-toc nil
+        org-export-with-tags nil))
 ;;;; org-agenda
 (after! org
   (setq
@@ -214,14 +231,20 @@
         `(;; Events are not scheduled or deadlines.
 
           ;; Discard TOREAD enties that have no
+          (:time-grid t)
           (:discard (:and (:todo "TOREAD"
                            :not (:scheduled t :deadline t))))
           (:name "Inbox" :category "Inbox"
                  :order 0)
-          (:name "Future Deadlines"
-           :and (:deadline future
+          (:name "Class Deadlines"
+           :and (,@my/class-selector
+                 :deadline future
                  :not (:scheduled past :scheduled today))
            :order 3)
+          (:name "Deadlines"
+           :and (:deadline future
+                 :not (:scheduled past :scheduled today))
+           :order 4)
           (:name "" :auto-parent t
            :order 1)
           (:name "Habits" :take (6 (:habit t)) :order 2))))
@@ -258,6 +281,10 @@
 ;;;;; maps for evil-org-agenda-mode
 (after! evil-org-agenda
   (map! :mode evil-org-agenda-mode
+        :mvi "{" (λ! (evil-backward-paragraph 1)
+                     (org-agenda-previous-item 1))
+        :mvi "}" (λ! (evil-forward-paragraph 1)
+                     (org-agenda-next-item 1))
        :mvi "'" #'org-agenda
       :mvi "w" #'org-save-all-org-buffers
       :mvi "S" #'org-agenda-schedule
@@ -271,11 +298,16 @@
 
 ;;;; bindings
 (map! :mode org-mode
+      :i "TAB" #'cdlatex-tab
       :nv "]h" #'org-forward-heading-same-level
       :nv "[h" #'org-backward-heading-same-level)
 
 (map! :leader
       "nh" #'+default/org-notes-headlines)
+
+;;;; disable corfu in org-mode
+(after! org
+  (add-hook 'org-mode-hook (λ! (corfu-mode -1))))
 
 ;;;; org-capture-templates
 (after! org
@@ -356,6 +388,15 @@
 (after! org
   (add-hook 'org-tab-first-hook #'org-try-cdlatex-tab))
 
+(use-package! cdlatex
+  :config
+  (setq cdlatex-simplify-sub-super-scripts nil)
+
+  (map! :map 'org-cdlatex-mode-map
+        "'" nil
+        "_" nil)
+  )
+
 ;;;; org-latex-preview
 (map! :mode org
       :leader "cl" (λ! (org-latex-preview (or current-prefix-arg '(16)))))
@@ -377,7 +418,6 @@
 (use-package! ox-latex
   :after org
   :config
-
   (dolist (pkg '("placeins" "amsmath" "amssymb" "amsthm" "mathtools" "mathrsfs" "pgfplots" "float" "siunitx" "xfrac" "cancel"))
     (add-to-list 'org-latex-packages-alist `("" ,pkg t)))
 
@@ -438,8 +478,10 @@
 ;; Since I am going to be spending a considerable amount of time reading
 ;; prose in this mode, I'd like it if the text is larger on the screen
 (after! org
-  (setq my/org-text-height 1.15)
+  (setq my/org-text-height 1.25)
   (add-hook 'org-mode-hook (λ! (face-remap-add-relative 'default :height my/org-text-height)))
+  (add-hook 'prog-mode-hook (λ! (face-remap-add-relative 'default :height 1.2)))
+  (add-hook 'TeX-mode-hook (λ! (face-remap-add-relative 'default :height 1.2)))
   )
 ;;;;; custom function to sort entries under toplevel headings
 (defun my/custom-org-entry-sort-algo ()
@@ -635,11 +677,23 @@
 
 
 
-;;; hl-line-mode
-(add-hook 'prog-mode-hook (λ! (hl-line-mode -1)))
-(add-hook 'text-mode-hook (λ! (hl-line-mode -1)))
-(add-hook 'org-agenda-mode-hook (λ! (hl-line-mode -1)))
 ;;; focus-mode
 (use-package! focus
   :config
   (map! :nv "zf" #'focus-mode))
+
+;;; helpful
+(after! helpful
+  (add-to-list 'display-buffer-alist
+               '("\\*helpful"
+                 (display-buffer-reuse-window
+                  display-buffer-at-bottom)
+                 (window-height . 0.3)
+                 (inhibit-same-window . t))))
+
+;;; hl-line
+(add-hook 'org-mode-hook (λ! (hl-line-mode -1)))
+
+
+;;; org-anki
+(use-package! org-anki)

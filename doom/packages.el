@@ -65,4 +65,6 @@
 
 (package! detached)
 
-(package! solaire-mode :disable t)
+;(package! solaire-mode :disable t)
+                                        ;
+(package! org-anki)

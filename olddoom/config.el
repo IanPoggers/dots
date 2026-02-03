@@ -531,7 +531,7 @@
     ;;  (org-level-8 . 1.1)))
     (set-face-attribute (car face) nil
                         :height (cdr face)
-                        :family my/variable
+                        ;;:family my/variable
                         :weight 'semi-bold
                         :extend nil
                         :slant 'italic
