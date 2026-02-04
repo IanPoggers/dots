@@ -10,6 +10,7 @@ spawn-at-startup "waybar"
 spawn-at-startup "swww restore"
 spawn-at-startup "wlsunset -l 47.6 -L -122.3"
 spawn-at-startup "swayidle" "-w" "timeout" "601" "niri msg action power-off-monitors" "timeout" "600" "swaylock -f" "before-sleep" "swaylock -f"
+spawn-at-startup "dropbox &"
 
 // Input device configuration.
 // Find the full list of options on the wiki:
@@ -78,6 +79,7 @@ binds {
     Mod+Tab repeat=false { toggle-overview; }
 
     Mod+Q repeat=false { close-window; }
+    Mod+Shift+Q repeat=false { close-window; }
 
     Mod+Left  { focus-column-left; }
     Mod+Down  { focus-window-down; }
@@ -333,7 +335,7 @@ input {
         drag-lock
         //natural-scroll
         accel-speed 0.8
-        scroll-factor 0.5
+        scroll-factor 0.3
         accel-profile "adaptive" // "flat" or "adaptive"
         scroll-method "two-finger"
         // disabled-on-external-mouse

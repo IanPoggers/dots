@@ -36,7 +36,7 @@
 (setq my/monospace "Iosevka Nerd Font Mono"
       my/variable "Inter")
 
-(setq! doom-font (font-spec :family my/monospace :size 16)
+(setq! doom-font (font-spec :family my/monospace :size 17)
        doom-variable-pitch-font (font-spec :family my/variable :size 16))
 
 
@@ -99,8 +99,8 @@
 (after! corfu
   (add-hook 'corfu-mode-hook
             (lambda ()
-  (setq corfu-auto-delay 0.03
-        corfu-popupinfo-delay '(0.05 . 0.1)))))
+              (setq corfu-auto-delay 0.03
+                    corfu-popupinfo-delay '(0.05 . 0.1)))))
 
 ;;; vertico
 (use-package! vertico
@@ -135,8 +135,8 @@
   (setq org-use-fast-todo-selection nil)
 
   (setq org-agenda-files (cl-remove-duplicates (mapcar 'f-expand
-                                 (cl-union org-agenda-files
-                                 (directory-files org-directory t ".org$")))))
+                                                       (cl-union org-agenda-files
+                                                                 (directory-files org-directory t ".org$")))))
 
   ;;(setq org-agenda-files (mapcar
   ;;                        (lambda (str) (f-join org-directory str))
@@ -174,6 +174,15 @@
   (setq
    org-agenda-start-day "today")
 
+  (setq org-agenda-scheduled-leaders '("Sch." "S%2dx")
+        org-agenda-deadline-leaders '("Ddl." "D%2dd" "D%2dx")
+        org-agenda-format-date " %b %d ─── %^a"
+        org-agenda-prefix-format
+        '((agenda . " %t %s ")
+          (todo . " %-8:c")
+          (tags . " %-8:c")
+          (search . " %-8:c")))
+
   (setq org-habit-show-habits t)
 
   (setq org-agenda-window-setup 'reorganize-frame)
@@ -191,19 +200,17 @@
 
   (setq org-agenda-overriding-header "")
 
-  (setq
-   org-agenda-skip-scheduled-repeats-after-deadline t
-   org-agenda-skip-scheduled-if-deadline-is-shown t
-   org-agenda-skip-deadline-prewarning-if-scheduled 'pre-scheduled)
+  (setq org-agenda-skip-scheduled-repeats-after-deadline t
+        org-agenda-skip-scheduled-if-deadline-is-shown t
+        org-agenda-skip-deadline-prewarning-if-scheduled nil ;'pre-scheduled
+        )
 
-  (setq
-   org-agenda-skip-deadline-if-done t
-   org-agenda-skip-scheduled-if-done t
-   org-agenda-skip-timestamp-if-done nil)
+  (setq org-agenda-skip-deadline-if-done t
+        org-agenda-skip-scheduled-if-done t
+        org-agenda-skip-timestamp-if-done nil)
 
-  (setq
-   org-enforce-todo-checkbox-dependencies t
-   org-enforce-todo-dependencies t))
+  (setq org-enforce-todo-checkbox-dependencies t
+        org-enforce-todo-dependencies t))
 ;;;;; org-super-agenda-groups
 (setq
  my/class-selector '(:tag ("class" "LA" "DE" "CAL"))
@@ -235,38 +242,44 @@
           (:discard (:and (:todo "TOREAD"
                            :not (:scheduled t :deadline t))))
           (:name "Inbox" :category "Inbox"
-                 :order 0)
-          (:name "Class Deadlines"
-           :and (,@my/class-selector
-                 :deadline future
-                 :not (:scheduled past :scheduled today))
-           :order 3)
-          (:name "Deadlines"
+           :order 0)
+          ;;(:name "Class Deadlines"
+          ;; :and (,@my/class-selector
+          ;;       :deadline future
+          ;;       :not (:scheduled past :scheduled today))
+          ;; :order 3)
+          (:name "\nDeadlines"
            :and (:deadline future
                  :not (:scheduled past :scheduled today))
            :order 4)
           (:name "" :auto-parent t
            :order 1)
-          (:name "Habits" :take (6 (:habit t)) :order 2))))
+          (:name "Habits" :take (8 (:habit t)) :order 2))))
 
 ;;;;; org-agenda commands
 (after! org-agenda
   (setq org-agenda-custom-commands
-  '(("n" "Agenda and all TODOs" ((agenda "") (alltodo "")))
-("h" "Habits" agenda ""
-      ((org-agenda-span 1)
-       (org-agenda-overriding-header "")
-       (org-agenda-sorting-strategy
-        '((agenda priority-down timestamp-up)))
-       (org-habit-show-habits-only-for-today nil)
-       (org-habit-show-all-today nil)
-       (org-habit-show-habits t)
-       (org-super-agenda-groups
-        `((:discard (:not (:habit t)))
-          (:name ""
-           :and (,@my/today-group
-                 :not (:scheduled future)))
-          (:discard (:habit t)))))))))
+        '(("n" "Agenda and all TODOs" ((agenda "") (alltodo "")))
+          ("w" "Week View" agenda ""
+           ((org-agenda-span 7)
+            (org-deadline-warning-days 0)
+            (org-agenda-start-on-weekday 1)
+            (org-habit-show-habits nil)
+            (org-super-agenda-groups nil))
+           ("h" "Habits" agenda ""
+            ((org-agenda-span 1)
+             (org-agenda-overriding-header "")
+             (org-agenda-sorting-strategy
+              '((agenda priority-down timestamp-up)))
+             (org-habit-show-habits-only-for-today nil)
+             (org-habit-show-all-today nil)
+             (org-habit-show-habits t)
+             (org-super-agenda-groups
+              `((:discard (:not (:habit t)))
+                (:name ""
+                 :and (,@my/today-group
+                       :not (:scheduled future)))
+                (:discard (:habit t))))))))))
 ;;;;; keywords
 (after! org
   (setq org-todo-keywords '((type "TODO(t)" "NEXT(n)" "|" "DONE(d)")
@@ -278,23 +291,32 @@
         org-pretty-entities-include-sub-superscripts nil)
 
   (add-hook 'org-mode-hook #'prettify-symbols-mode))
-;;;;; maps for evil-org-agenda-mode
+;;;;; evil-org-agenda-mode key mappings
 (after! evil-org-agenda
   (map! :mode evil-org-agenda-mode
         :mvi "{" (λ! (evil-backward-paragraph 1)
                      (org-agenda-previous-item 1))
         :mvi "}" (λ! (evil-forward-paragraph 1)
                      (org-agenda-next-item 1))
-       :mvi "'" #'org-agenda
-      :mvi "w" #'org-save-all-org-buffers
-      :mvi "S" #'org-agenda-schedule
-      :mvi "R" #'org-agenda-refile
-      ;; since the previous one overwrites the binding for
-      :mvi "s\\" #'org-agenda-filter-remove-all
-      :mvi "D" #'org-agenda-deadline
-      :mvi "j" #'org-agenda-next-item
-      :mvi "k" #'org-agenda-previous-item
-      :mvi "s/" #'org-agenda-filter))
+        :mvi "q" nil
+        :mvi "E" #'org-agenda-set-effort
+        :mvi "'" #'org-agenda
+        :mvi "w" #'org-save-all-org-buffers
+        :mvi "S" #'org-agenda-schedule
+        :mvi "R" #'org-agenda-refile
+        ;; since the previous one overwrites the binding for
+        :mvi "s\\" #'org-agenda-filter-remove-all
+        :mvi "D" #'org-agenda-deadline
+        :mvi "S-<return>" (λ! (org-agenda-switch-to t))
+        :mvi "j" #'org-agenda-next-item
+        :mvi "k" #'org-agenda-previous-item
+        :mvi "s/" #'org-agenda-filter)
+
+  ;; really disable "q" to quit agenda... i keep killing it on accident lol
+  (map! :map 'org-agenda-keymap "q" nil
+        :map 'org-agenda-mode-map "q" nil))
+
+
 
 ;;;; bindings
 (map! :mode org-mode
@@ -407,8 +429,8 @@
 ;;;; Bind to quickly traverse up headings
 (map! :mode org-mode
       :nv "zU" (lambda ()
-               (interactive)
-               (evil-org-top))
+                 (interactive)
+                 (evil-org-top))
       :nv "U" (λ! (org-up-heading-or-point-min)))
 ;;;; org bindings idk
 (map! :mode org-mode
@@ -468,7 +490,7 @@
 ;;;; focus.el in org-mode
 (use-package! focus
   :config
-;;  (mapcar (lambda (mode) (add-hook mode 'focus-mode))
+  ;;  (mapcar (lambda (mode) (add-hook mode 'focus-mode))
   ;;          '(org-mode-hook emacs-lisp-mode-hook LaTeX-mode-hook))
 
 
@@ -527,12 +549,12 @@
     (set-face-attribute face nil :family my/monospace))
 
   (dolist (face '(org-level-1 org-level-2 org-level-3 org-level-4
-                org-level-5 org-level-6 org-level-7 org-level-8
-                org-document-title))
+                  org-level-5 org-level-6 org-level-7 org-level-8
+                  org-document-title))
     (set-face-attribute face nil
+                        :height 1.00
                         :slant 'italic
-                        :family my/monospace))
-)
+                        :family my/monospace)))
 
 
 
@@ -681,15 +703,6 @@
 (use-package! focus
   :config
   (map! :nv "zf" #'focus-mode))
-
-;;; helpful
-(after! helpful
-  (add-to-list 'display-buffer-alist
-               '("\\*helpful"
-                 (display-buffer-reuse-window
-                  display-buffer-at-bottom)
-                 (window-height . 0.3)
-                 (inhibit-same-window . t))))
 
 ;;; hl-line
 (add-hook 'org-mode-hook (λ! (hl-line-mode -1)))
