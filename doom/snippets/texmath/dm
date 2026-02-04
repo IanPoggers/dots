@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: Display Math
+# uuid: dispmath
+# key: dm
+# condition: t
+# --
+\[ $0 \]

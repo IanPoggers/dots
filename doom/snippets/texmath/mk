@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: Inline Math
+# uuid: mk-org
+# key: mk
+# condition: (not (texmathp))
+# --
+\\($0\\)
