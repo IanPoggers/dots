@@ -37,13 +37,13 @@
       my/variable "Inter")
 
 (setq! doom-font (font-spec :family my/monospace :size 17)
-       doom-variable-pitch-font (font-spec :family my/variable :size 16))
+       doom-variable-pitch-font (font-spec :family my/variable :size 17))
 
 
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'doom-nord)
+(setq doom-theme 'doom-acario-dark)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
@@ -174,16 +174,18 @@
   (setq
    org-agenda-start-day "today")
 
-  (setq org-agenda-scheduled-leaders '("Sch." "S%2dx")
-        org-agenda-deadline-leaders '("Ddl." "D%2dd" "D%2dx")
+  (setq org-agenda-todo-keyword-format "%1.1s "
+        org-agenda-scheduled-leaders '("   " "%2dx")
+        org-agenda-deadline-leaders '("Due" "%2dd" "%2dx")
         org-agenda-format-date " %b %d ─── %^a"
         org-agenda-prefix-format
-        '((agenda . " %t %s ")
-          (todo . " %-8:c")
-          (tags . " %-8:c")
-          (search . " %-8:c")))
+        '((agenda . "%s ")
+          (todo . " %-8 c")
+          (tags . " %-8 c")
+          (search . " %-8 c")))
 
-  (setq org-habit-show-habits t)
+  (setq org-habit-show-habits t
+        org-log-into-drawer t)
 
   (setq org-agenda-window-setup 'reorganize-frame)
 
@@ -254,7 +256,7 @@
            :order 4)
           (:name "" :auto-parent t
            :order 1)
-          (:name "Habits" :take (8 (:habit t)) :order 2))))
+          (:name "\nHabits" :take (8 (:habit t)) :order 2))))
 
 ;;;;; org-agenda commands
 (after! org-agenda
@@ -310,7 +312,10 @@
         :mvi "S-<return>" (λ! (org-agenda-switch-to t))
         :mvi "j" #'org-agenda-next-item
         :mvi "k" #'org-agenda-previous-item
-        :mvi "s/" #'org-agenda-filter)
+        :mvi "<down>" #'org-agenda-next-item
+        :mvi "<up>" #'org-agenda-previous-item
+        :mvi "s/" #'org-agenda-filter
+        :leader "k" #'org-habit-toggle-habits)
 
   ;; really disable "q" to quit agenda... i keep killing it on accident lol
   (map! :map 'org-agenda-keymap "q" nil
@@ -342,10 +347,6 @@
            "* TODO %?\nSCHEDULED: %^t\n%i\n" :prepend t)
           ("S" "Linked Scheduled todo" entry (file "Inbox.org")
            "* TODO %? %A\nSCHEDULED: %^t\n%i" :prepend t)
-          ("d" "Deadline todo" entry (file "Inbox.org")
-           "* TODO %?\nDEADLINE: %^t\n%i\n" :prepend t)
-          ("D" "Linked Deadline todo" entry (file "Inbox.org")
-           "* TODO %? %A\nDEADLINE: %^t\n%i" :prepend t)
           ("h" "Personal habit" entry (file "habit.org")
            "* TODO [#D] %?\nSCHEDULED: <%<%Y-%m-%d %a> .+1d>\n:PROPERTIES:\n:STYLE: habit\n:END:\n%i\n" :prepend t)
           ("n" "Personal notes" entry (file "Inbox.org")
@@ -362,14 +363,12 @@
                                         ;("pc" "Project-local changelog" entry
                                         ;(file+headline +org-capture-project-changelog-file "Unreleased") "* %U %?\n%i\n%a"
                                         ;:prepend t)
-          ("l" "Linear Algebra Todo" entry (file+headline "todo.org" "Class")
-           "* TODO %? :LA:\n%i\n" :prepend t)
-          ("C" "Class Todo" entry (file+headline "todo.org" "Class")
-           "* TODO %? :class:\n%i\n" :prepend t)
-          ("c" "Calc Todo" entry (file+headline "todo.org" "Class")
-           "* TODO %? :calc:\n%i\n" :prepend t)
-          ("d" "Differential Equations Todo" entry (file+headline "todo.org" "Class")
-           "* TODO %? :diffeq:\n%i\n" :prepend t)
+          ("l" "Linear Algebra Todo" entry (file "Inbox.org")
+           "* TODO Linear Algebra: %? :LA:\n%i\n" :prepend t)
+          ("c" "Calc Todo" entry (file "Inbox.org")
+           "* TODO Calculus: %? :calc:\n%i\n" :prepend t)
+          ("d" "Differential Equations Todo" entry (file "Inbox.org")
+           "* TODO Differential Equations: %? :diffeq:\n%i\n" :prepend t)
           ("o" "Centralized templates for projects")
           ("ot" "Project todo" entry #'+org-capture-central-project-todo-file
            "* TODO %?\n %i\n %a" :heading "Tasks" :prepend nil)
@@ -380,8 +379,7 @@
           ("r" "Reading Inbox" entry (file+headline "reading.org" "Inbox")
            "* TOREAD %?\n%^{AUTHOR}p\n%i\n" :prepend t)
           ("m" "Movie Inbox" entry (file "movies.org")
-           "* TODO %?\n%^{Tomato}p\n%^{IMDb}p" :prepend t)
-          )))
+           "* TODO %?\n%^{Tomato}p\n%^{IMDb}p" :prepend t))))
 
 ;;;; org-attach
 (after! org-attach
@@ -500,10 +498,10 @@
 ;; Since I am going to be spending a considerable amount of time reading
 ;; prose in this mode, I'd like it if the text is larger on the screen
 (after! org
-  (setq my/org-text-height 1.25)
+  (setq my/org-text-height 1.15)
   (add-hook 'org-mode-hook (λ! (face-remap-add-relative 'default :height my/org-text-height)))
-  (add-hook 'prog-mode-hook (λ! (face-remap-add-relative 'default :height 1.2)))
-  (add-hook 'TeX-mode-hook (λ! (face-remap-add-relative 'default :height 1.2)))
+  (add-hook 'prog-mode-hook (λ! (face-remap-add-relative 'default :height 1.1)))
+  (add-hook 'TeX-mode-hook (λ! (face-remap-add-relative 'default :height 1.1)))
   )
 ;;;;; custom function to sort entries under toplevel headings
 (defun my/custom-org-entry-sort-algo ()
@@ -532,7 +530,7 @@
 ;;;; Mixed-pitch
 (use-package! mixed-pitch
   :config
-  (add-hook 'org-mode-hook 'mixed-pitch-mode)
+  ;;(add-hook 'org-mode-hook 'mixed-pitch-mode)
   (pushnew! mixed-pitch-fixed-pitch-faces
             'org-superstar-leading 'org-date
             'font-lock-comment-face
@@ -542,7 +540,7 @@
             'org-link
             'corfu-default)
 
-  (setq mixed-pitch-set-height t))
+  (setq mixed-pitch-set-height nil))
 
 (after! org
   (dolist (face '(org-todo error warning org-link))
