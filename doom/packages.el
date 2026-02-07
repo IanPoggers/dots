@@ -78,6 +78,8 @@
 
 (unpin! org)
 
+(package! org-ql)
+
 (package! focus)
 (package! org-download)
 
@@ -93,3 +95,5 @@
 ;(package! solaire-mode :disable t)
                                         ;
 (package! org-anki)
+
+(package! xr)

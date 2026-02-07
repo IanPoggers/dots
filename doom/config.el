@@ -33,7 +33,7 @@
 ;;
 
 ;;; custom vars
-(setq my/monospace "Iosevka Nerd Font Mono"
+(setq my/monospace "Fira Code Nerd Font Mono"
       my/variable "Inter")
 
 (setq! doom-font (font-spec :family my/monospace :size 17)
@@ -43,7 +43,7 @@
 ;; There are two ways to load a theme. Both assume the theme is installed and
 ;; available. You can either set `doom-theme' or manually load a theme with the
 ;; `load-theme' function. This is the default:
-(setq doom-theme 'doom-acario-dark)
+(setq doom-theme 'doom-gruvbox)
 
 ;; This determines the style of line numbers in effect. If set to `nil', line
 ;; numbers are disabled. For relative line numbers, set this to `relative'.
@@ -130,7 +130,7 @@
 
   (setq org-cycle-max-level nil)
 
-  (setq org-indent-indentation-per-level 2)
+  (setq org-indent-indentation-per-level 1)
 
   (setq org-use-fast-todo-selection nil)
 
@@ -153,6 +153,14 @@
 
   (setq org-hide-emphasis-markers t)
 
+  (setq org-agenda-time-grid nil)
+
+  ;;(setq org-agenda-time-grid
+  ;;      '((today require-timed remove-match)
+  ;;        (0800 1200  1600 2000)
+  ;;        "......" "----------------"))
+
+
   (setq
    org-cycle-emulate-tab nil
 
@@ -174,12 +182,18 @@
   (setq
    org-agenda-start-day "today")
 
+  (setq org-timestamp-custom-formats
+        '("%m/%d %a" . "%m/%d %a %H:%M")
+        org-display-custom-times t)
+
+  (add-hook 'org-mode-hook 'org-toggle-timestamp-overlays)
+
   (setq org-agenda-todo-keyword-format "%1.1s "
         org-agenda-scheduled-leaders '("   " "%2dx")
         org-agenda-deadline-leaders '("Due" "%2dd" "%2dx")
         org-agenda-format-date " %b %d ─── %^a"
         org-agenda-prefix-format
-        '((agenda . "%s ")
+        '((agenda . "%?-12t%s ")
           (todo . " %-8 c")
           (tags . " %-8 c")
           (search . " %-8 c")))
@@ -262,6 +276,7 @@
 (after! org-agenda
   (setq org-agenda-custom-commands
         '(("n" "Agenda and all TODOs" ((agenda "") (alltodo "")))
+          ("'" agenda "")
           ("w" "Week View" agenda ""
            ((org-agenda-span 7)
             (org-deadline-warning-days 0)
@@ -324,13 +339,24 @@
 
 
 ;;;; bindings
-(map! :mode org-mode
-      :i "TAB" #'cdlatex-tab
-      :nv "]h" #'org-forward-heading-same-level
-      :nv "[h" #'org-backward-heading-same-level)
+(defun my/org-tree-to-indirect-buffer-default-C-u-prefix (arg)
+  (interactive "P")
+  (org-tree-to-indirect-buffer (or arg '(4))))
 
-(map! :leader
-      "nh" #'+default/org-notes-headlines)
+(after! org
+  (map! :map 'override
+        :leader
+        "'" #'org-agenda)
+
+  (map! :map 'evil-org-mode-map
+        :i "TAB" #'cdlatex-tab
+        :nv "]h" #'org-forward-heading-same-level
+        :nv "[h" #'org-backward-heading-same-level
+        :nv "zn" #'my/org-tree-to-indirect-buffer-default-C-u-prefix)
+
+  (map! :leader
+        "n/" #'consult-org-agenda
+        "nh" #'+default/org-notes-headlines))
 
 ;;;; disable corfu in org-mode
 (after! org
@@ -350,9 +376,9 @@
           ("h" "Personal habit" entry (file "habit.org")
            "* TODO [#D] %?\nSCHEDULED: <%<%Y-%m-%d %a> .+1d>\n:PROPERTIES:\n:STYLE: habit\n:END:\n%i\n" :prepend t)
           ("n" "Personal notes" entry (file "Inbox.org")
-           "* %?\n%i\n" :prepend t :jump-to-captured t)
+           "* %?\n%i\n" :prepend t)
           ("N" "Linked note" entry (file "Inbox.org")
-           "* %? %A\n%i" :prepend t :jump-to-captured t)
+           "* %? %A\n%i" :prepend t)
                                         ;("p" "Templates for projects")
                                         ;("pt" "Project-local todo" entry
                                         ;(file+headline +org-capture-project-todo-file "Inbox") "* TODO %?\n%i\n%a" :prepend
@@ -364,11 +390,11 @@
                                         ;(file+headline +org-capture-project-changelog-file "Unreleased") "* %U %?\n%i\n%a"
                                         ;:prepend t)
           ("l" "Linear Algebra Todo" entry (file "Inbox.org")
-           "* TODO Linear Algebra: %? :LA:\n%i\n" :prepend t)
+           "* TODO Lin Alg: %? :LA:\n%i\n" :prepend t)
           ("c" "Calc Todo" entry (file "Inbox.org")
            "* TODO Calculus: %? :calc:\n%i\n" :prepend t)
-          ("d" "Differential Equations Todo" entry (file "Inbox.org")
-           "* TODO Differential Equations: %? :diffeq:\n%i\n" :prepend t)
+          ("d" "Diff Eqns Todo" entry (file "Inbox.org")
+           "* TODO Diff Eqn: %? :DE:\n%i\n" :prepend t)
           ("o" "Centralized templates for projects")
           ("ot" "Project todo" entry #'+org-capture-central-project-todo-file
            "* TODO %?\n %i\n %a" :heading "Tasks" :prepend nil)
@@ -412,10 +438,10 @@
   :config
   (setq cdlatex-simplify-sub-super-scripts nil)
 
+  ;; holy cow i hate how it inserts brackets kill me
   (map! :map 'org-cdlatex-mode-map
-        "'" nil
-        "_" nil)
-  )
+        "^" nil
+        "_" nil))
 
 ;;;; org-latex-preview
 (map! :mode org
@@ -498,9 +524,9 @@
 ;; Since I am going to be spending a considerable amount of time reading
 ;; prose in this mode, I'd like it if the text is larger on the screen
 (after! org
-  (setq my/org-text-height 1.15)
+  (setq my/org-text-height 1.10)
   (add-hook 'org-mode-hook (λ! (face-remap-add-relative 'default :height my/org-text-height)))
-  (add-hook 'prog-mode-hook (λ! (face-remap-add-relative 'default :height 1.1)))
+  (add-hook 'prog-mode-hook (λ! (face-remap-add-relative 'default :height 1.05)))
   (add-hook 'TeX-mode-hook (λ! (face-remap-add-relative 'default :height 1.1)))
   )
 ;;;;; custom function to sort entries under toplevel headings
@@ -521,7 +547,10 @@
   (interactive)
   (org-map-entries 'my/custom-org-entry-sort-algo
                    "LEVEL=1")
-  (org-cycle '(16)))
+  (org-cycle '(16))
+  (org-map-entries (λ! (unless (org-invisible-p)
+                     (outline-show-entry)))
+                   "LEVEL=2"))
 
 (map! :map 'org-mode-map
       :g "C-c s" #'my/sort-top-level)
@@ -551,7 +580,6 @@
                   org-document-title))
     (set-face-attribute face nil
                         :height 1.00
-                        :slant 'italic
                         :family my/monospace)))
 
 
@@ -660,11 +688,6 @@
 (map! :map 'evil-window-map
       "O" #'delete-other-windows)
 
-;;; lsp-mode
-(use-package! lsp-mode
-  :config
-  (setq lsp-ui-doc-delay 0.1))
-
 ;;; org-roam
 (use-package! org-roam
   :init
@@ -675,10 +698,14 @@
   :config
   (org-roam-db-sync)
 
+  (setq consult-notes-file-dir-sources
+        `(("Org" ?o ,org-directory)))
+
   (consult-notes-org-headings-mode)
   (consult-notes-org-roam-mode)
 
   (map! :leader
+        "ns" #'consult-notes-search-in-all-notes
         "n'" #'consult-notes))
 ;;; detached
 (use-package! detached
@@ -792,9 +819,43 @@
       (remove-hook 'org-latex-preview-overlay-open-functions
                    #'my/org-latex-preview-uncenter)))
   (add-hook! 'org-latex-preview-mode-hook (lambda () (org-latex-preview 'buffer)))
-  (add-hook! 'org-mode-hook (lambda () (org-latex-preview 'buffer))))
+  (add-hook! 'org-mode-hook (lambda () (org-latex-preview 'buffer)))
+  (add-hook 'org-mode-hook 'org-latex-preview-mode))
 
 (add-hook 'after-change-major-mode-hook
           (lambda ()
             (when (eq major-mode 'org-mode)
               (org-latex-preview 'buffer))))
+
+
+(after! org-latex-preview
+  (add-hook 'org-mode-hook 'org-latex-preview-center-mode)
+  (add-hook 'org-mode-hook 'org-latex-preview-mode))
+
+;;; org-ql
+(use-package! org-ql
+  :config
+  (add-to-list 'warning-suppress-types '(org-ql)))
+
+;;; TODO
+(setq org-id-link-to-org-use-id t)
+;;; theming org-mode
+(after! org
+  (set-face-attribute 'org-block nil
+                      :extend t)
+  (set-face-attribute 'org-quote nil
+                      :extend t))
+
+;;; TODO This will stop annoying errors that this function doesn't exist
+(defun org--latex-preview-region (arg arga)
+  (org-latex-preview 'section))
+
+;;; org-babel-rust
+(use-package! rustic-babel
+  :config
+  (setq rustic-babel-format-src-block t))
+
+;;; TODO org-ellipsis should have non-breaking space
+(after! org
+  (setq org-ellipsis " [...]"
+        +fold-ellipsis " [...]"))

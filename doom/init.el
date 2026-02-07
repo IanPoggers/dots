@@ -22,7 +22,9 @@
 
        :completion
        ;;company           ; the ultimate code completion backend
-       (corfu +orderless)  ; complete with cap(f), cape and a flying feather!
+       (corfu
+        +icons
+        +orderless)  ; complete with cap(f), cape and a flying feather!
        ;;helm              ; the *other* search engine for love and life
        ;;ido               ; the other *other* search engine...
        ;;ivy               ; a search engine for love and life
@@ -99,6 +101,8 @@
        lookup              ; navigate your code and its documentation
        ;;llm               ; when I said you needed friends, I didn't mean...
        (lsp      ; M-x vscode
+        ;;+eglot
+        +booster
         +peek)
        magit             ; a git porcelain for Emacs
        ;;make              ; run make tasks from Emacs
@@ -151,7 +155,8 @@
        (latex             ; writing papers in Emacs has never been so fun
         +cdlatex
         +lsp)
-       ;;lean              ; for folks with too much to prove
+       (lean              ; for folks with too much to prove
+        +lsp)
        ;;ledger            ; be audit you can be
        ;;lua               ; one-based indices? one-based indices
        markdown          ; writing docs for people to ignore

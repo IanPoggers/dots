@@ -2002,8 +2002,7 @@
 
 ;;; This will stop annoying errors that this function doesn't exist
 (defun org--latex-preview-region (arg arga)
-  (org-latex-preview 'section)
-  )
+  (org-latex-preview 'section))
 
 ;;; This warning is really fucking annoying
 (add-to-list 'warning-suppress-types '(org-element))
