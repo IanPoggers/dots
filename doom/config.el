@@ -36,8 +36,8 @@
 (setq my/monospace "Fira Code Nerd Font Mono"
       my/variable "Inter")
 
-(setq! doom-font (font-spec :family my/monospace :size 17)
-       doom-variable-pitch-font (font-spec :family my/variable :size 17))
+(setq! doom-font (font-spec :family my/monospace :size 16)
+       doom-variable-pitch-font (font-spec :family my/variable :size 16))
 
 
 ;; There are two ways to load a theme. Both assume the theme is installed and
@@ -547,10 +547,7 @@
   (interactive)
   (org-map-entries 'my/custom-org-entry-sort-algo
                    "LEVEL=1")
-  (org-cycle '(16))
-  (org-map-entries (λ! (unless (org-invisible-p)
-                     (outline-show-entry)))
-                   "LEVEL=2"))
+  (org-cycle '(16)))
 
 (map! :map 'org-mode-map
       :g "C-c s" #'my/sort-top-level)
@@ -616,6 +613,7 @@
   :config
   (add-hook 'evil-mode-hook
             (lambda () (setq-local evil-scroll-count 18) ))
+  (setq-default evil-scroll-count 18)
 
   (cl-pushnew 'org-agenda-mode evil-motion-state-modes))
 
@@ -859,3 +857,40 @@
 (after! org
   (setq org-ellipsis " [...]"
         +fold-ellipsis " [...]"))
+
+;;; TODO Idk where this goes
+(pixel-scroll-precision-mode -1)
+
+;;; TODO idk this either
+(setq treemacs-width 35)
+
+(after! lsp-ui
+(setq lsp-ui-doc-enable t
+      lsp-ui-doc-delay 0.3
+      lsp-ui-doc-max-height 20
+      lsp-ui-doc-show-with-mouse t
+      lsp-ui-doc-show-with-cursor nil
+      lsp-ui-doc-position 'at-point) ; Options: 'top, 'bottom, or 'at-point
+
+(add-hook 'lsp-mode 'lsp-inlay-hints-mode)
+(add-hook 'lsp-mode (λ! (setq lsp-inlay-hints-mode 1)))
+
+(setq-default lsp-inlay-hint-enable t)
+
+(set-face-attribute 'lsp-face-highlight-textual nil
+                    :extend t)
+
+(setq lsp-ui-sideline-show-hover t
+      lsp-ui-sideline-delay 0.1
+      lsp-ui-sideline-show-diagnostics t
+      lsp-ui-sideline-show-symbol t
+      lsp-ui-sideline-show-code-actions t))
+
+;;; TODO idek anymore
+(map!
+ :nv "[ <TAB>" #'tab-previous
+ :nv "] <TAB>" #'tab-next
+ :nv "<SPC> <TAB>" #'tab-recent)
+
+(map! :mode rustic-mode
+      :nv "<SPC> K" #'lsp-rust-analyzer-open-external-docs)

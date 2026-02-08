@@ -97,3 +97,5 @@
 (package! org-anki)
 
 (package! xr)
+
+(package! elcord)
