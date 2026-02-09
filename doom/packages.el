@@ -99,3 +99,5 @@
 (package! xr)
 
 (package! elcord)
+
+(package! kdl-mode)

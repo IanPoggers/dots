@@ -255,6 +255,11 @@
 
           ;; Discard TOREAD enties that have no
           (:time-grid t)
+          (:name "Next"
+           :category "Next"
+           :tag "next"
+           :todo "NEXT"
+           :order -1)
           (:discard (:and (:todo "TOREAD"
                            :not (:scheduled t :deadline t))))
           (:name "Inbox" :category "Inbox"
@@ -267,10 +272,10 @@
           (:name "\nDeadlines"
            :and (:deadline future
                  :not (:scheduled past :scheduled today))
-           :order 4)
+           :order 5)
           (:name "" :auto-parent t
-           :order 1)
-          (:name "\nHabits" :take (8 (:habit t)) :order 2))))
+           :order 2)
+          (:name "\nHabits" :take (8 (:habit t)) :order 3))))
 
 ;;;;; org-agenda commands
 (after! org-agenda
@@ -402,7 +407,7 @@
            "* %U %?\n %i\n %a" :heading "Notes" :prepend t)
           ("oc" "Project changelog" entry #'+org-capture-central-project-changelog-file
            "* %U %?\n %i\n %a" :heading "Changelog" :prepend t)
-          ("r" "Reading Inbox" entry (file+headline "reading.org" "Inbox")
+          ("r" "Reading Inbox" entry (file "ReadingList.org")
            "* TOREAD %?\n%^{AUTHOR}p\n%i\n" :prepend t)
           ("m" "Movie Inbox" entry (file "movies.org")
            "* TODO %?\n%^{Tomato}p\n%^{IMDb}p" :prepend t))))
@@ -816,8 +821,6 @@
                    #'my/org-latex-preview-center)
       (remove-hook 'org-latex-preview-overlay-open-functions
                    #'my/org-latex-preview-uncenter)))
-  (add-hook! 'org-latex-preview-mode-hook (lambda () (org-latex-preview 'buffer)))
-  (add-hook! 'org-mode-hook (lambda () (org-latex-preview 'buffer)))
   (add-hook 'org-mode-hook 'org-latex-preview-mode))
 
 (add-hook 'after-change-major-mode-hook
@@ -865,26 +868,26 @@
 (setq treemacs-width 35)
 
 (after! lsp-ui
-(setq lsp-ui-doc-enable t
-      lsp-ui-doc-delay 0.3
-      lsp-ui-doc-max-height 20
-      lsp-ui-doc-show-with-mouse t
-      lsp-ui-doc-show-with-cursor nil
-      lsp-ui-doc-position 'at-point) ; Options: 'top, 'bottom, or 'at-point
+  (setq lsp-ui-doc-enable t
+        lsp-ui-doc-delay 0.3
+        lsp-ui-doc-max-height 20
+        lsp-ui-doc-show-with-mouse t
+        lsp-ui-doc-show-with-cursor nil
+        lsp-ui-doc-position 'at-point) ; Options: 'top, 'bottom, or 'at-point
 
-(add-hook 'lsp-mode 'lsp-inlay-hints-mode)
-(add-hook 'lsp-mode (λ! (setq lsp-inlay-hints-mode 1)))
+  (add-hook 'lsp-mode 'lsp-inlay-hints-mode)
+  (add-hook 'lsp-mode (λ! (setq lsp-inlay-hints-mode 1)))
 
-(setq-default lsp-inlay-hint-enable t)
+  (setq-default lsp-inlay-hint-enable t)
 
-(set-face-attribute 'lsp-face-highlight-textual nil
-                    :extend t)
+  (set-face-attribute 'lsp-face-highlight-textual nil
+                      :extend t)
 
-(setq lsp-ui-sideline-show-hover t
-      lsp-ui-sideline-delay 0.1
-      lsp-ui-sideline-show-diagnostics t
-      lsp-ui-sideline-show-symbol t
-      lsp-ui-sideline-show-code-actions t))
+  (setq lsp-ui-sideline-show-hover t
+        lsp-ui-sideline-delay 0.1
+        lsp-ui-sideline-show-diagnostics t
+        lsp-ui-sideline-show-symbol t
+        lsp-ui-sideline-show-code-actions t))
 
 ;;; TODO idek anymore
 (map!
@@ -894,3 +897,11 @@
 
 (map! :mode rustic-mode
       :nv "<SPC> K" #'lsp-rust-analyzer-open-external-docs)
+
+;;; TODO remap M-ret to C-c ret
+(after! org
+  (map! :mode 'org-mode
+        :i "M-RET" #'org-ctrl-c-ret))
+
+;;; TODO kdl-mode
+(use-package! kdl-mode)

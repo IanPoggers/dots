@@ -352,8 +352,8 @@ input {
     trackpoint {
         // off
         // natural-scroll
-        accel-speed 1.0
-        accel-profile "flat" // "flat" or "adaptive"
+        accel-speed 0.9
+        accel-profile "adaptive" // "flat" or "adaptive"
         // scroll-method "on-button-down"
         // scroll-button 273
         // scroll-button-lock

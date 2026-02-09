@@ -10,7 +10,7 @@
      "/home/james/Dropbox/org/movies.org" "/home/james/Dropbox/org/habit.org"
      "/home/james/Dropbox/org/Index.org" "/home/james/Dropbox/org/Inbox.org"
      "/home/james/Dropbox/org/Calc2.org"))
- '(package-selected-packages '(focus hyperbole mixed-pitch org-pomodoro)))
+ '(package-selected-packages '(focus hyperbole kdl-mode mixed-pitch org-pomodoro)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

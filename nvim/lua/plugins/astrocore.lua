@@ -66,6 +66,8 @@ return {
 
         ["<Leader>n"] = false,
 
+        ["<Leader>K"] = { "<cmd>RustLsp externalDocs<cr>", desc = "Open external documentation" },
+
         -- mappings seen under group name "Buffer"
         ["<Leader>bd"] = {
           function()
